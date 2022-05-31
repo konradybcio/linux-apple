@@ -230,6 +230,9 @@
 
 static DEFINE_STATIC_KEY_TRUE(use_fast_ipi);
 
+/* True if UNCORE/UNCORE2 and Sn_... IPI registers are present (A11+) */
+static DEFINE_STATIC_KEY_TRUE(has_uncore_ipi_regs);
+
 struct aic_info {
 	int version;
 
@@ -246,6 +249,7 @@ struct aic_info {
 
 	/* Features */
 	bool fast_ipi;
+	bool uncore_ipi_regs;
 };
 
 static const struct aic_info aic1_info = {
@@ -261,7 +265,17 @@ static const struct aic_info aic1_fipi_info = {
 	.event		= AIC_EVENT,
 	.target_cpu	= AIC_TARGET_CPU,
 
+	.uncore_ipi_regs	= true,
 	.fast_ipi	= true,
+};
+
+static const struct aic_info aic1_nofipi_info = {
+	.version	= 1,
+
+	.event		= AIC_EVENT,
+	.target_cpu	= AIC_TARGET_CPU,
+
+	.uncore_ipi_regs	= true,
 };
 
 static const struct aic_info aic2_info = {
@@ -269,10 +283,15 @@ static const struct aic_info aic2_info = {
 
 	.irq_cfg	= AIC2_IRQ_CFG,
 
+	.uncore_ipi_regs	= true,
 	.fast_ipi	= true,
 };
 
 static const struct of_device_id aic_info_match[] = {
+	{
+		.compatible = "apple,t8015-aic",
+		.data = &aic1_info,
+	},
 	{
 		.compatible = "apple,t8103-aic",
 		.data = &aic1_fipi_info,
@@ -524,12 +543,14 @@ static void __exception_irq_entry aic_handle_fiq(struct pt_regs *regs)
 	 * we check for everything here, even things we don't support yet.
 	 */
 
-	if (read_sysreg_s(SYS_IMP_APL_IPI_SR_EL1) & IPI_SR_PENDING) {
-		if (static_branch_likely(&use_fast_ipi)) {
-			aic_handle_ipi(regs);
-		} else {
-			pr_err_ratelimited("Fast IPI fired. Acking.\n");
-			write_sysreg_s(IPI_SR_PENDING, SYS_IMP_APL_IPI_SR_EL1);
+	if (static_branch_likely(&has_uncore_ipi_regs)) {
+		if (read_sysreg_s(SYS_IMP_APL_IPI_SR_EL1) & IPI_SR_PENDING) {
+			if (static_branch_likely(&use_fast_ipi)) {
+				aic_handle_ipi(regs);
+			} else {
+				pr_err_ratelimited("Fast IPI fired. Acking.\n");
+				write_sysreg_s(IPI_SR_PENDING, SYS_IMP_APL_IPI_SR_EL1);
+			}
 		}
 	}
 
@@ -566,12 +587,14 @@ static void __exception_irq_entry aic_handle_fiq(struct pt_regs *regs)
 					  AIC_FIQ_HWIRQ(irq));
 	}
 
-	if (FIELD_GET(UPMCR0_IMODE, read_sysreg_s(SYS_IMP_APL_UPMCR0_EL1)) == UPMCR0_IMODE_FIQ &&
-			(read_sysreg_s(SYS_IMP_APL_UPMSR_EL1) & UPMSR_IACT)) {
-		/* Same story with uncore PMCs */
-		pr_err_ratelimited("Uncore PMC FIQ fired. Masking.\n");
-		sysreg_clear_set_s(SYS_IMP_APL_UPMCR0_EL1, UPMCR0_IMODE,
-				   FIELD_PREP(UPMCR0_IMODE, UPMCR0_IMODE_OFF));
+	if (static_branch_likely(&has_uncore_ipi_regs)) {
+		if (FIELD_GET(UPMCR0_IMODE, read_sysreg_s(SYS_IMP_APL_UPMCR0_EL1)) ==
+			UPMCR0_IMODE_FIQ && (read_sysreg_s(SYS_IMP_APL_UPMSR_EL1) & UPMSR_IACT)) {
+			/* Same story with uncore PMCs */
+			pr_err_ratelimited("Uncore PMC FIQ fired. Masking.\n");
+			sysreg_clear_set_s(SYS_IMP_APL_UPMCR0_EL1, UPMCR0_IMODE,
+					FIELD_PREP(UPMCR0_IMODE, UPMCR0_IMODE_OFF));
+		}
 	}
 }
 
@@ -944,7 +967,8 @@ static int aic_init_cpu(unsigned int cpu)
 	/* Mask all hard-wired per-CPU IRQ/FIQ sources */
 
 	/* Pending Fast IPI FIQs */
-	write_sysreg_s(IPI_SR_PENDING, SYS_IMP_APL_IPI_SR_EL1);
+	if (static_branch_likely(&use_fast_ipi))
+		write_sysreg_s(IPI_SR_PENDING, SYS_IMP_APL_IPI_SR_EL1);
 
 	/* Timer FIQs */
 	sysreg_clear_set(cntp_ctl_el0, 0, ARCH_TIMER_CTRL_IT_MASK);
@@ -965,8 +989,9 @@ static int aic_init_cpu(unsigned int cpu)
 			   FIELD_PREP(PMCR0_IMODE, PMCR0_IMODE_OFF));
 
 	/* Uncore PMC FIQ */
-	sysreg_clear_set_s(SYS_IMP_APL_UPMCR0_EL1, UPMCR0_IMODE,
-			   FIELD_PREP(UPMCR0_IMODE, UPMCR0_IMODE_OFF));
+	if (static_branch_likely(&has_uncore_ipi_regs))
+		sysreg_clear_set_s(SYS_IMP_APL_UPMCR0_EL1, UPMCR0_IMODE,
+				   FIELD_PREP(UPMCR0_IMODE, UPMCR0_IMODE_OFF));
 
 	/* Commit all of the above */
 	isb();
@@ -1124,6 +1149,11 @@ static int __init aic_of_ic_init(struct device_node *node, struct device_node *p
 		static_branch_enable(&use_fast_ipi);
 	else
 		static_branch_disable(&use_fast_ipi);
+
+	if (irqc->info.uncore_ipi_regs)
+		static_branch_enable(&has_uncore_ipi_regs);
+	else
+		static_branch_disable(&has_uncore_ipi_regs);
 
 	irqc->info.die_stride = off - start_off;
 
