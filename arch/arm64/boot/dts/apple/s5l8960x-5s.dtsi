@@ -28,6 +28,23 @@
 	};
 };
 
+&i2c0 {
+	status = "okay";
+
+	/* Tristar MUX chip @ 1A */
+	/* PMU (chestnut) for display @ 27 */
+	/* PWM vibrator @ 38 */
+	/* Cirrus Logic CS35L19 amp @ 40 */
+	/* LM3534 backlight controller @ 63 */
+	/* PMU (d2045) for Oscar, TouchID, BT, audio codec, battery, Lightning/USB, modem @ 74 */
+};
+
+&i2c1 {
+	status = "okay";
+
+	/* TSL2581 light-to-digital converter @ 29 */
+};
+
 &serial0 {
 	status = "okay";
 };
