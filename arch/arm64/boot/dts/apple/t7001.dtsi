@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple T7001 "A8X" SoC
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+ #include "t7000.dtsi"
+
+ / {
+	cpus {
+		cpu2: cpu@2 {
+			compatible = "apple,typhoon";
+			reg = <2>;
+			device-type = "cpu";
+		};
+	};
+};

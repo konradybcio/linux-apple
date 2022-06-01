@@ -1,0 +1,27 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Air 2 common device tree
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t7001.dtsi"
+
+/ {
+	chosen {
+		framebuffer@87d0e2000 {
+			compatible = "simple-framebuffer";
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			width = <1536>;
+			height = <2048>;
+			stride = <(1536 * 4)>;
+			format = "a8b8g8r8";
+		};
+	};
+
+	reserved-memory {
+		framebuffer_mem: memory@87d0e2000 {
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			no-map;
+		};
+	};
+};
