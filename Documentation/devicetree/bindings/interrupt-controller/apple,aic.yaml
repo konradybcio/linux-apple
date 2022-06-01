@@ -37,6 +37,9 @@ allOf:
 properties:
   compatible:
     items:
+      - const: apple,s5l8960x-aic
+      - const: apple,s8000-aic
+      - const: apple,t7000-aic
       - const: apple,t8103-aic
       - const: apple,aic
 
