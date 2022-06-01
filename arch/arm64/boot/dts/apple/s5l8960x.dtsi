@@ -72,6 +72,55 @@
 		#size-cells = <2>;
 		ranges;
 
+		/* these two have a single interrupt?? */
+		isp0_dart: dart@205b22000 {
+			compatible = "apple,s5l8960x-dart";
+			reg = <0x2 0x05b22000 0x0 0x2000>;
+			interrupt-parent = <&aic>;
+			interrupts = <AIC_IRQ 40 IRQ_TYPE_LEVEL_HIGH>;
+			#iommu-cells = <1>;
+			status = "disabled";
+		};
+
+		isp1_dart: dart@205b24000 {
+			compatible = "apple,s5l8960x-dart";
+			reg = <0x2 0x05b24000 0x0 0x4000>;
+			interrupt-parent = <&aic>;
+			interrupts = <AIC_IRQ 40 IRQ_TYPE_LEVEL_HIGH>;
+			#iommu-cells = <1>;
+			status = "disabled";
+		};
+
+		/* 2 scaler darts, itrs: 102, 101, 103, this config is untested guesstimation */
+		scaler0_dart: dart@207904000 {
+			compatible = "apple,s5l8960x-dart";
+			reg = <0x2 0x07904000 0x0 0x4000>;
+			interrupt-parent = <&aic>;
+			interrupts = <AIC_IRQ 102 IRQ_TYPE_LEVEL_HIGH>,
+				     <AIC_IRQ 101 IRQ_TYPE_LEVEL_HIGH>;
+			#iommu-cells = <1>;
+			status = "disabled";
+		};
+
+		scaler1_dart: dart@207908000 {
+			compatible = "apple,s5l8960x-dart";
+			reg = <0x2 0x07908000 0x0 0x4000>;
+			interrupt-parent = <&aic>;
+			interrupts = <AIC_IRQ 103 IRQ_TYPE_LEVEL_HIGH>;
+			#iommu-cells = <1>;
+			status = "disabled";
+		};
+
+		jpeg_dart: dart@207b02000 {
+			compatible = "apple,s5l8960x-dart";
+			reg = <0x2 0x07b02000 0x0 0x2000>;
+			interrupt-parent = <&aic>;
+			interrupts = <AIC_IRQ 96 IRQ_TYPE_LEVEL_HIGH>,
+				     <AIC_IRQ 97 IRQ_TYPE_LEVEL_HIGH>;
+			#iommu-cells = <1>;
+			status = "disabled";
+		};
+
 		serial0: serial@20a0a0000 {
 			compatible = "apple,s5l-uart";
 			reg = <0x2 0x0a0a0000 0x0 0x4000>;
