@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Air 2 common device tree
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t7001.dtsi"
+/delete-node/ &hacky_reserved_mem;
+
+/ {
+	chosen {
+		framebuffer@87d0e2000 {
+			compatible = "simple-framebuffer";
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			width = <1536>;
+			height = <2048>;
+			stride = <(1536 * 4)>;
+			format = "a8b8g8r8";
+		};
+	};
+
+	reserved-memory {
+		/* There may possibly be more regions hiding somewhere.. */
+		memory@870100000 {
+			reg = <0x8 0x70100000 0x0 0x7b000>;
+			no-map;
+		};
+
+		memory@870180000 {
+			reg = <0x8 0x70180000 0x0 0x40000>;
+			no-map;
+		};
+
+		framebuffer_mem: memory@87d0e2000 {
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			no-map;
+		};
+
+		memory@87f4e2000 {
+			reg = <0x8 0x7f4e2000 0x0 0x18000>;
+			no-map;
+		};
+
+		memory@87f4fa000 {
+			reg = <0x8 0x7f4fa000 0x0 0x80000>;
+			no-map;
+		};
+
+		memory@87f57a000 {
+			reg = <0x8 0x7f57a000 0x0 0x1000>;
+			no-map;
+		};
+
+		memory@87f57b000 {
+			reg = <0x8 0x7f57b000 0x0 0x1000>;
+			no-map;
+		};
+
+		memory@87f57c000 {
+			reg = <0x8 0x7f57c000 0x0 0x4000>;
+			no-map;
+		};
+
+		memory@87f580000 {
+			reg = <0x8 0x7f580000 0x0 0x80000>;
+			no-map;
+		};
+
+		memory@87f600000 {
+			reg = <0x8 0x7f600000 0x0 0xa0000>;
+			no-map;
+		};
+	};
+};
+
+&system_memory {
+	/* The Air 2 comes with 2 GiB of RAM. */
+	reg = <0x8 0 0 0x80000000>;
+};
