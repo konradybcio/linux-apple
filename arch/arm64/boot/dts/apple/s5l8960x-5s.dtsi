@@ -27,3 +27,43 @@
 		};
 	};
 };
+
+&serial0 {
+	status = "okay";
+};
+
+&serial1 {
+	status = "okay";
+
+	/* Bluetooth chip */
+};
+
+&serial2 {
+	status = "okay";
+
+	/* Apple Oscar sensor hub */
+};
+
+&serial3 {
+	status = "okay";
+
+	/* WLAN debug device */
+};
+
+&serial4 {
+	status = "okay";
+
+	/* Apple 'debug' device (?) */
+};
+
+&serial5 {
+	status = "okay";
+
+	/* bq27540 fuel gauge */
+};
+
+&serial6 {
+	status = "okay";
+
+	/* Apple IAP (something related to Lightning?) */
+};
