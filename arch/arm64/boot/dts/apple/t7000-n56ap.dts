@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPhone 6 Plus, N56AP, iPhone7,2 (A1549/A1586/A1589)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "t7000-6.dtsi"
+
+/ {
+	model = "Apple iPhone 6 Plus";
+	compatible = "apple,n56ap", "apple,t7000", "apple,arm-platform";
+};
+
+&framebuffer {
+	reg = <0x8 0x3e900000 0x0 (1920 * 1080 * 4)>;
+	width = <1920>;
+	height = <1080>;
+	stride = <(1080 * 4)>;
+};
+
+&framebuffer_mem {
+	reg = <0x8 0x3e900000 0x0 (1920 * 1080 * 4)>;
+};

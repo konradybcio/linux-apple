@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPhone 6 / 6 Plus common device tree
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t7000.dtsi"
+
+/ {
+	chosen {
+		/* Framebuffer width needs to be offset by 2 for some reason.. */
+		framebuffer: framebuffer@83e900000 {
+			compatible = "simple-framebuffer";
+			reg = <0x8 0x3e900000 0x0 (1334 * (750 + 2) * 4)>;
+			width = <750>;
+			height = <1334>;
+			stride = <((750 + 2) * 4)>;
+			format = "a8b8g8r8";
+		};
+	};
+
+	reserved-memory {
+		framebuffer_mem: memory@83e900000 {
+			reg = <0x8 0x3e900000 0x0 (1334 * (750 + 2) * 4)>;
+			no-map;
+		};
+	};
+};
