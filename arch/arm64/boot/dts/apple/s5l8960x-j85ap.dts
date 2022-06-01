@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Mini 2 (Wi-Fi), J85AP, iPad4,4 (A1489)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "s5l8960x-mini2.dtsi"
+
+/ {
+	model = "Apple iPad Mini 2 (Wi-Fi)";
+	compatible = "apple,j85ap", "apple,s5l8960x", "apple,arm-platform";
+};
