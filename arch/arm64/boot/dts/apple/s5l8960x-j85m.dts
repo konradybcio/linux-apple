@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Mini 3 (Wi-Fi), J85m, iPad4,7 (A1599)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "s5l8960x-j85.dts"
+#include "s5l8960x-mini3.dtsi"
+
+/ {
+	model = "Apple iPad Mini 3 (Wi-Fi)";
+	compatible = "apple,j85m", "apple,s5l8960x", "apple,arm-platform";
+};
