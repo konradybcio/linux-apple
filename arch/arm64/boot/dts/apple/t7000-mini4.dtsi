@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Mini 4 common device tree
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t7000.dtsi"
+
+/ {
+	chosen {
+		framebuffer@AAAAAAA {
+			compatible = "simple-framebuffer";
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			width = <1536>;
+			height = <2048>;
+			stride = <(1536 * 4)>;
+			format = "a8b8g8r8";
+		};
+	};
+
+	reserved-memory {
+		framebuffer_mem: memory@AAAAAA {
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			no-map;
+		};
+	};
+};

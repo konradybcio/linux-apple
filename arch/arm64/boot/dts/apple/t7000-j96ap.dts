@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Mini 4 (Wi-Fi), J96AP, iPad5,1 (A1538)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "t7000-mini4.dtsi"
+
+/ {
+	model = "Apple iPad Mini 4 (Wi-Fi)";
+	compatible = "apple,j96ap", "apple,t7000", "apple,arm-platform";
+};
