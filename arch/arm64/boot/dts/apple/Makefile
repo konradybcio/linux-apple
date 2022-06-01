@@ -1,4 +1,15 @@
 # SPDX-License-Identifier: GPL-2.0
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j71ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j72ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j73ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j85ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j85map.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j86ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j86map.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j87ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-j87map.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-n51ap.dtb
+dtb-$(CONFIG_ARCH_APPLE) += s5l8960x-n53ap.dtb
 dtb-$(CONFIG_ARCH_APPLE) += t8103-j274.dtb
 dtb-$(CONFIG_ARCH_APPLE) += t8103-j293.dtb
 dtb-$(CONFIG_ARCH_APPLE) += t8103-j313.dtb

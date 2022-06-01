@@ -1,0 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Mini 3 (Cellular, China), J87mAP, iPad4,9 (A1601)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "s5l8960x-j87ap.dts"
+#include "s5l8960x-mini3.dtsi"
+
+/ {
+	model = "Apple iPad Mini 3 (Cellular, China)";
+	compatible = "apple,j87map", "apple,s5l8960x", "apple,arm-platform";
+};

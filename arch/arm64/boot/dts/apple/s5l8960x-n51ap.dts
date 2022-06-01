@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPhone 5S (GSM), N51AP, iPhone6,1 (A1453/A1533)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "s5l8960x-5s.dtsi"
+
+/ {
+	model = "Apple iPhone 5S (GSM)";
+	compatible = "apple,n51ap", "apple,s5l8960x", "apple,arm-platform";
+};

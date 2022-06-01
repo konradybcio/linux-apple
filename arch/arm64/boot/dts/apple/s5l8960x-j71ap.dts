@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Air (Wi-Fi), J71AP, iPad4,1 (A1474)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "s5l8960x-air1.dtsi"
+
+/ {
+	model = "Apple iPad Air (Wi-Fi)";
+	compatible = "apple,j71ap", "apple,s5l8960x", "apple,arm-platform";
+};

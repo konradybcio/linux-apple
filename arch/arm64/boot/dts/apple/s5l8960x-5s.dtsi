@@ -1,0 +1,29 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPhone 5S common device tree
+ * Based on A7 (APL0698), up to 1.3GHz
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "s5l8960x.dtsi"
+
+/ {
+	chosen {
+		framebuffer@CHANGEME {
+			compatible = "simple-framebuffer";
+			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;
+			width = <1536>;
+			height = <2048>;
+			stride = <(1536 * 4)>;
+			format = "a8b8g8r8";
+		};
+	};
+
+	reserved-memory {
+		framebuffer_mem: memory@CHANGEME {
+			reg = <0x8 0x3e900000 0x0 (1334 * 750 * 4)>;
+			no-map;
+		};
+	};
+};

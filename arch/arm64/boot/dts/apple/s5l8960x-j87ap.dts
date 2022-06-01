@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Mini 2 (Cellular, China), J87AP, iPad4,6 (A1491)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "s5l8960x-mini2.dtsi"
+
+/ {
+	model = "Apple iPad Mini 2 (Cellular, China)";
+	compatible = "apple,j87ap", "apple,s5l8960x", "apple,arm-platform";
+};
