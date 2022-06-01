@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPod Touch 6, N102, iPod7,1 (A1574)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "t7000.dtsi"
+
+/ {
+	model = "Apple iPod Touch 6";
+	compatible = "apple,n102", "apple,t7000", "apple,arm-platform";
+};
+
+&serial0 {
+	status = "okay";
+};
