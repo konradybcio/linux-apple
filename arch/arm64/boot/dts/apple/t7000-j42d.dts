@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple TV 4K, J42d, AppleTV5,3 (A1625)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "t7000.dtsi"
+
+/ {
+	model = "Apple TV 4K";
+	compatible = "apple,j42d", "apple,t7000", "apple,arm-platform";
+};
+
+&serial0 {
+	status = "okay";
+};
