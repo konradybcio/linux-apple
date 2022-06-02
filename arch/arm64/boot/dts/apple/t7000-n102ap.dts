@@ -23,6 +23,15 @@
 		};
 	};
 
+	/*
+	 * iPod 6 has 1GB ram.
+	 * Currently PongoOs doesn't fill in the memory node, so keep it in DT.
+	 */
+	memory@800000000 {
+		device_type = "memory";
+		reg = <0x8 0xc00000 0x0 0x3dd00000>;
+	};
+
 	reserved-memory {
 		framebuffer_mem: memory@83ec00000 {
 			reg = <0x8 0x3ec00000 0x0 (1136 * 640 * 4)>;

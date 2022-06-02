@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0+ OR MIT
 /*
- * Apple iPhone 6 / 6S common device tree
+ * Apple iPhone 6 / 6 Plus common device tree
  * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
  */
 
@@ -8,19 +8,29 @@
 
 / {
 	chosen {
+		/* Framebuffer width is currently offsetted by 2 */
 		framebuffer: framebuffer@83e900000 {
 			compatible = "simple-framebuffer";
-			reg = <0x8 0x3e900000 0x0 (1334 * 750 * 4)>;
-			width = <750>;
+			reg = <0x8 0x3e900000 0x0 (1334 * (750 + 2) * 4)>;
+			width = <(750 + 2)>;
 			height = <1334>;
-			stride = <(750 * 4)>;
+			stride = <((750 + 2) * 4)>;
 			format = "a8b8g8r8";
 		};
 	};
 
+	/*
+	 * iPhone 6 and 6 plus have 1GB ram.
+	 * Currently PongoOs doesn't fill in the memory node, so keep it in DT.
+	 */
+	memory@800000000 {
+		device_type = "memory";
+		reg = <0x8 0xc00000 0x0 0x3dd00000>;
+	};
+
 	reserved-memory {
 		framebuffer_mem: memory@83e900000 {
-			reg = <0x8 0x3e900000 0x0 (1334 * 750 * 4)>;
+			reg = <0x8 0x3e900000 0x0 (1334 * (750 + 2) * 4)>;
 			no-map;
 		};
 	};

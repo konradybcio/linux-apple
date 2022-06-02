@@ -18,6 +18,15 @@
 		};
 	};
 
+	/*
+	 * iPad Air 2 has 2GB ram.
+	 * Currently PongoOs doesn't fill in the memory node, so keep it in DT.
+	 */
+	memory@800000000 {
+		device_type = "memory";
+		reg = <0x8 0xc00000 0x0 0x7c4e2000>;
+	};
+
 	reserved-memory {
 		framebuffer_mem: memory@87d0e2000 {
 			reg = <0x8 0x7d0e2000 0x0 (2048 * 1536 * 4)>;

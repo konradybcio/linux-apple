@@ -48,18 +48,59 @@
 		};
 	};
 
-	memory@800000000 {
-		device_type = "memory";
-		reg = <0x8 0 0x2 0x8000000>; /* To be filled by loader */
-	};
-
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
 
-		memory@800000000 {
-			reg = <0x8 0x00000000 0x0 0x3000000>;
+		/* TODO: Add more regions, based on ADT. */
+		carveout1@87f600000 {
+			reg = <0x8 0x7f600000 0x0 0xa0000>;
+			no-map;
+		};
+
+		carveout2@87f580000 {
+			reg = <0x8 0x7f580000 0x0 0x80000>;
+			no-map;
+		};
+
+		carveout3@87f57c000 {
+			reg = <0x8 0x7f57c000 0x0 0x4000>;
+			no-map;
+		};
+
+		carveout4@87f57b000 {
+			reg = <0x8 0x7f57b000 0x0 0x1000>;
+			no-map;
+		};
+
+		carveout5@87f57a000 {
+			reg = <0x8 0x7f57a000 0x0 0x1000>;
+			no-map;
+		};
+
+		carveout6@87f4fa000 {
+			reg = <0x8 0x7f4fa000 0x0 0x80000>;
+			no-map;
+		};
+
+		carveout7@87f4fa000 {
+			reg = <0x8 0x7f4fa000 0x0 0x80000>;
+			no-map;
+		};
+
+		carveout8@87f4e2000 {
+			reg = <0x8 0x7f4e2000 0x0 0x18000>;
+			no-map;
+		};
+
+		carveout9@870180000 {
+			reg = <0x8 0x70180000 0x0 0x40000>;
+			no-map;
+		};
+
+		carveout10@870100000 {
+			reg = <0x8 0x70100000 0x0 0x7b000>;
 			no-map;
 		};
 	};
@@ -96,6 +137,7 @@
 			#interrupt-cells = <3>;
 			interrupt-controller;
 		};
+
 	};
 
 	timer {
