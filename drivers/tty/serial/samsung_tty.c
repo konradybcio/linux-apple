@@ -1859,6 +1859,67 @@ s3c24xx_serial_ports[CONFIG_SERIAL_SAMSUNG_UARTS] = {
 			.flags		= UPF_BOOT_AUTOCONF,
 			.line		= 3,
 		}
+	},
+#endif
+#if CONFIG_SERIAL_SAMSUNG_UARTS > 4
+	[4] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(4),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 4,
+		}
+	},
+
+	[5] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(5),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 5,
+		}
+	},
+
+	[6] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(6),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 6,
+		}
+	},
+
+	[7] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(7),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 7,
+		}
+	},
+
+	[8] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(8),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 8,
+		}
 	}
 #endif
 };
