@@ -79,7 +79,10 @@
 &i2c1 {
 	status = "okay";
 
-	/* TSL2581 light-to-digital converter @ 29 */
+	light-sensor@29 {
+		compatible = "amstaos,tsl2581";
+		reg = <0x29>;
+	};
 };
 
 &serial0 {
