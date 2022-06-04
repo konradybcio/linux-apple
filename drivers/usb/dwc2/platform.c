@@ -217,6 +217,31 @@ int dwc2_lowlevel_hw_disable(struct dwc2_hsotg *hsotg)
 	return ret;
 }
 
+static void dwc2_soft_reset(struct dwc2_hsotg *hsotg)
+{
+	int timeout = 10;
+	u32 val;
+
+	while(timeout --) {
+		val = readl(hsotg->regs + GRSTCTL);
+		if(val & GRSTCTL_AHBIDLE)
+			break;
+		usleep_range(1000, 2000);
+	}
+
+	writel(val | GRSTCTL_CSFTRST | GRSTCTL_HSFTRST, hsotg->regs + GRSTCTL);
+
+	timeout = 10;
+	while(timeout --) {
+		val = readl(hsotg->regs + GRSTCTL);
+		if(!(val & (GRSTCTL_CSFTRST | GRSTCTL_HSFTRST)))
+			return;
+		usleep_range(1000, 2000);
+	}
+
+	dev_err(hsotg->dev, "error resetting controller\n");
+}
+
 static int dwc2_lowlevel_hw_init(struct dwc2_hsotg *hsotg)
 {
 	int i, ret;
@@ -227,6 +252,10 @@ static int dwc2_lowlevel_hw_init(struct dwc2_hsotg *hsotg)
 				     "error getting reset control\n");
 
 	reset_control_deassert(hsotg->reset);
+
+	if (!hsotg->reset) {
+		dwc2_soft_reset(hsotg);
+	}
 
 	hsotg->reset_ecc = devm_reset_control_get_optional(hsotg->dev, "dwc2-ecc");
 	if (IS_ERR(hsotg->reset_ecc))
@@ -438,7 +467,7 @@ static int dwc2_driver_probe(struct platform_device *dev)
 {
 	struct dwc2_hsotg *hsotg;
 	struct resource *res;
-	int retval;
+	int retval, dma_mask = 32;
 
 	hsotg = devm_kzalloc(&dev->dev, sizeof(*hsotg), GFP_KERNEL);
 	if (!hsotg)
@@ -446,12 +475,15 @@ static int dwc2_driver_probe(struct platform_device *dev)
 
 	hsotg->dev = &dev->dev;
 
+	if(of_property_read_bool(dev->dev.of_node, "hx,dma-remap"))
+		dma_mask = 64;
+
 	/*
 	 * Use reasonable defaults so platforms don't have to provide these.
 	 */
 	if (!dev->dev.dma_mask)
 		dev->dev.dma_mask = &dev->dev.coherent_dma_mask;
-	retval = dma_set_coherent_mask(&dev->dev, DMA_BIT_MASK(32));
+	retval = dma_set_coherent_mask(&dev->dev, DMA_BIT_MASK(dma_mask));
 	if (retval) {
 		dev_err(&dev->dev, "can't set coherent DMA mask: %d\n", retval);
 		return retval;

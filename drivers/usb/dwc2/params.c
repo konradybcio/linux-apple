@@ -260,6 +260,26 @@ static void dwc2_set_stm32mp15_hsotg_params(struct dwc2_hsotg *hsotg)
 	p->hird_threshold_en = false;
 }
 
+static void dwc2_set_apple_silicon_usbdev_params(struct dwc2_hsotg *hsotg)
+{
+	struct dwc2_core_params *p = &hsotg->params;
+	unsigned fifo, fifo_count;
+
+	p->speed = DWC2_SPEED_PARAM_HIGH;
+	p->power_down = DWC2_POWER_DOWN_PARAM_NONE;
+	p->g_rx_fifo_size = 0x21b;
+	p->g_np_tx_fifo_size = 16;
+	p->host_nperio_tx_fifo_size = 16;
+	p->lpm = false;
+	p->i2c_enable = false;
+
+
+	fifo_count = dwc2_hsotg_tx_fifo_count(hsotg);
+	p->g_tx_fifo_size[0] = 64;
+	for(fifo = 1; fifo <= fifo_count; fifo++)
+		p->g_tx_fifo_size[fifo] = 256;
+}
+
 const struct of_device_id dwc2_of_match_table[] = {
 	{ .compatible = "brcm,bcm2835-usb", .data = dwc2_set_bcm_params },
 	{ .compatible = "hisilicon,hi6220-usb", .data = dwc2_set_his_params },
@@ -297,6 +317,7 @@ const struct of_device_id dwc2_of_match_table[] = {
 	  .data = dwc2_set_stm32mp15_hsotg_params },
 	{ .compatible = "intel,socfpga-agilex-hsotg",
 	  .data = dwc2_set_socfpga_agilex_params },
+	{ .compatible = "apple,dwc2-usb", .data = dwc2_set_apple_silicon_usbdev_params },
 	{},
 };
 MODULE_DEVICE_TABLE(of, dwc2_of_match_table);
