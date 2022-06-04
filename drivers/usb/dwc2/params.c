@@ -754,7 +754,7 @@ static void dwc2_check_params(struct dwc2_hsotg *hsotg)
 {
 	struct dwc2_hw_params *hw = &hsotg->hw_params;
 	struct dwc2_core_params *p = &hsotg->params;
-	bool dma_capable = !(hw->arch == GHWCFG2_SLAVE_ONLY_ARCH);
+	bool dma_capable = false;//!(hw->arch == GHWCFG2_SLAVE_ONLY_ARCH);
 
 	dwc2_check_param_otg_cap(hsotg);
 	dwc2_check_param_phy_type(hsotg);
