@@ -233,6 +233,21 @@
 				pinmux = <APPLE_PINMUX(82, 1)>, <APPLE_PINMUX(83, 1)>;
 			};
 		};
+
+		usbcomplex {
+			compatible = "simple-bus";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			dma-ranges = <0x0 0x00000000 0x8 0x00000000 0x1 0x00000000>;
+			ranges;
+
+			usbdev: usbdev@20c100000 {
+				compatible = "apple,dwc2-usb";
+				reg = <0x2 0x0c100000 0x0 0x10000>;
+				interrupts = <AIC_IRQ 162 IRQ_TYPE_LEVEL_HIGH>;
+				hx,dma-remap;
+			};
+		};
 	};
 
 	timer {
