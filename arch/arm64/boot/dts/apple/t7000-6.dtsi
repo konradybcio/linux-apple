@@ -27,6 +27,29 @@
 	};
 };
 
+&i2c0 {
+	status = "okay";
+
+	/* ADI PMU (D2186) for Oscar, TouchID, BT, audio codec, battery, Lightning/USB, modem @ 74 */
+	/* LM3534 backlight controller @ 63 */
+	/* Tristar MUX chip @ 1A */
+	/* PMU (chestnut) for display @ 27 */
+};
+
+&i2c1 {
+	status = "okay";
+
+	/* Tigris charger (SN2400) @ 75 */
+	/* PWM vibrator (DRV2604) @ 5A */
+	/* Audio speaker (CS35L19B) @ 40 */
+};
+
+&i2c2 {
+	status = "okay";
+
+	/* ALS (CT814) @ 29 */
+};
+
 &serial0 {
 	status = "okay";
 };
