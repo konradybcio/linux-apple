@@ -1896,6 +1896,30 @@ s3c24xx_serial_ports[CONFIG_SERIAL_SAMSUNG_UARTS] = {
 			.flags		= UPF_BOOT_AUTOCONF,
 			.line		= 6,
 		}
+	},
+
+	[7] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(7),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 7,
+		}
+	},
+
+	[8] = {
+		.port = {
+			.lock		= __PORT_LOCK_UNLOCKED(8),
+			.iotype		= UPIO_MEM,
+			.uartclk	= 0,
+			.fifosize	= 16,
+			.ops		= &s3c24xx_serial_ops,
+			.flags		= UPF_BOOT_AUTOCONF,
+			.line		= 8,
+		}
 	}
 #endif
 };
