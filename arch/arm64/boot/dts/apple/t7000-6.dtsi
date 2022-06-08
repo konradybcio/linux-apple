@@ -26,3 +26,51 @@
 		};
 	};
 };
+
+&serial0 {
+	status = "okay";
+};
+
+&serial1 {
+	status = "okay";
+
+	/* Bluetooth chip (BCM4345) */
+};
+
+&serial2 {
+	status = "okay";
+
+	/* Baseband */
+};
+
+&serial3 {
+	status = "okay";
+
+	/* Stockholm */
+};
+
+&serial4 {
+	status = "okay";
+
+	/* WLAN UART */
+};
+
+&serial5 {
+	status = "okay";
+
+	/* Fuel gauge (BQ27540) */
+};
+
+&serial6 {
+	status = "okay";
+
+	/* Apple IAP (something related to Lightning?) */
+};
+
+/* Serial7 remains unused on iPhone 6 series */
+
+&serial8 {
+	status = "okay";
+
+	/* Apple Oscar sensor hub */
+};
