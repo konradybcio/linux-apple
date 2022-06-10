@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPhone X common device tree
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t8015.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	/* The buttons have been moved to a SMC subdevice which needs a driver, yuck! */
+};
+
+&serial0 {
+	status = "okay";
+};
