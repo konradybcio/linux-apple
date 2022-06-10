@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Pro 2 (10.5-inch) (Cellular), J208, iPad7,4 (A1709)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "t8011-pro2.dtsi"
+
+/ {
+	model = "Apple iPad Pro 2 (10.5-inch) (Cellular)";
+	compatible = "apple,j208", "apple,t8011", "apple,arm-platform";
+};

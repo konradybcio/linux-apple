@@ -1,0 +1,45 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad 6 common device tree
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t8010.dtsi"
+#include <dt-bindings/input/input.h>
+
+/ {
+	gpio-keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		home {
+			label = "Home Button";
+			gpios = <&pinctrl 180 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_LEFTMETA>;
+		};
+
+		power {
+			label = "Power Button";
+			gpios = <&pinctrl 179 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+		};
+
+		volume-up {
+			label = "Volume Up";
+			gpios = <&pinctrl 90 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+
+		volume-down {
+			label = "Volume Down";
+			gpios = <&pinctrl 89 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEDOWN>;
+		};
+	};
+};
+
+&serial0 {
+	status = "okay";
+};
