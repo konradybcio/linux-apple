@@ -1,0 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple iPad Pro 2 (12.9-inch) (Cellular), J121, iPad7,2 (A1671)
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+/dts-v1/;
+
+#include "t8011-pro2.dtsi"
+
+/ {
+	model = "Apple iPad Pro 2 (12.9-inch) (Cellular)";
+	compatible = "apple,j121", "apple,t8011", "apple,arm-platform";
+};

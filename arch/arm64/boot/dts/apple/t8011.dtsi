@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple T8011 "A10X" SoC
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+#include "t8010.dtsi"
+
+/ {
+	cpus {
+		cpu2: cpu@2 {
+			compatible = "apple,hurricane";
+			reg = <2>;
+			device-type = "cpu";
+		};
+	};
+};
