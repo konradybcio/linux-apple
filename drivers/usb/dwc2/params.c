@@ -267,11 +267,10 @@ static void dwc2_set_apple_silicon_usbdev_params(struct dwc2_hsotg *hsotg)
 
 	p->speed = DWC2_SPEED_PARAM_HIGH;
 	p->power_down = DWC2_POWER_DOWN_PARAM_NONE;
-	p->g_rx_fifo_size = 0x21b;
-	p->g_np_tx_fifo_size = 16;
+	p->g_rx_fifo_size = 539;
 	p->host_nperio_tx_fifo_size = 16;
+	p->g_np_tx_fifo_size = 16;
 	p->lpm = false;
-	p->i2c_enable = false;
 
 
 	fifo_count = dwc2_hsotg_tx_fifo_count(hsotg);
