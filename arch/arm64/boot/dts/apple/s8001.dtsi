@@ -1,0 +1,16 @@
+// SPDX-License-Identifier: GPL-2.0+ OR MIT
+/*
+ * Apple S8001 "A9X" SoC
+ *
+ * Copyright (c) 2022, Konrad Dybcio <konrad.dybcio@somainline.org>
+ */
+
+ #include "s8000.dtsi"
+
+/*
+ * The obvious differences are:
+ *  different CPU clock speeds
+ *  different GPU (based on PVR Series7XT)
+ *  no L3 cache
+ * Although there may possibly be more things that will pop up as more functionality is  added.
+ */
