@@ -228,6 +228,22 @@
 			status = "disabled";
 		};
 
+		usbcomplex {
+			compatible = "simple-bus";
+			#address-cells = <2>;
+			#size-cells = <2>;
+			dma-ranges = <0x0 0x00000000 0x8 0x00000000 0x1 0x00000000>;
+			ranges;
+
+			usbdev: usbdev@20c100000 {
+				compatible = "apple,t7000-usb";
+				reg = <0x2 0x0c100000 0x0 0x10000>;
+				interrupts = <AIC_IRQ 182 IRQ_TYPE_LEVEL_HIGH>;
+				hx,dma-remap;
+				srp-disable;
+			};
+		};
+
 		wdt: watchdog@20e027000 {
 			compatible = "apple,t7000-wdt", "apple,wdt";
 			reg = <0x2 0x0e027000 0x0 0x1000>;
