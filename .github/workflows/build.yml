@@ -1,0 +1,23 @@
+# Totally yanked from https://lca-kernel.ozlabs.org/2022-Currey-Abusing-GitHub-Actions-for-building-and-testing-kernels.pdf
+
+name: Build the 4K kernel
+on: [push]
+jobs:
+  kernel:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get install clang llvm lld fakeroot build-essential ncurses-dev xz-utils libssl-dev bc flex libelf-dev bison
+
+    - name: Build the 4K kernel
+      run: make ARCH=arm64 LLVM=1 -j$(nproc) dtbs && make ARCH=arm64 LLVM=1 -j$(nproc) Image.lzma && mkdir out && cp arch/arm64/boot/Image.lzma out/Image.lzma-4k
+
+    - name : Upload artifacts
+      uses: actions/upload-artifact@master
+      with:
+        name: 4K kernel
+        path: ./out/Image.lzma-4k
