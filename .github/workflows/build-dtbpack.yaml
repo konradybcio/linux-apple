@@ -1,0 +1,26 @@
+# Totally yanked from https://lca-kernel.ozlabs.org/2022-Currey-Abusing-GitHub-Actions-for-building-and-testing-kernels.pdf
+
+name: Build the dtbpack
+on: [push]
+jobs:
+  kernel:
+    runs-on: ubuntu-22.04
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get install clang llvm lld fakeroot build-essential ncurses-dev xz-utils libssl-dev bc flex libelf-dev bison
+
+    - name: Build DTBs
+      run: make ARCH=arm64 LLVM=1 -j$(nproc) dtbs
+
+    - name: Build the dtbpack
+      run: chmod +x ./dtbpack.sh && ./dtbpack.sh
+
+    - name : Upload artifacts
+      uses: actions/upload-artifact@master
+      with:
+        name: dtbpack
+        path: ./dtbpack
