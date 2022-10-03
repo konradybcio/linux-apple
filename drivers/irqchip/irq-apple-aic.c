@@ -290,7 +290,7 @@ static const struct aic_info aic2_info = {
 static const struct of_device_id aic_info_match[] = {
 	{
 		.compatible = "apple,t8015-aic",
-		.data = &aic1_info,
+		.data = &aic1_nofipi_info,
 	},
 	{
 		.compatible = "apple,t8103-aic",
