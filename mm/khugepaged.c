@@ -19,6 +19,7 @@
 #include <linux/page_table_check.h>
 #include <linux/swapops.h>
 #include <linux/shmem_fs.h>
+#include <linux/kmsan.h>
 
 #include <asm/tlb.h>
 #include <asm/pgalloc.h>
@@ -55,6 +56,7 @@ enum scan_result {
 	SCAN_CGROUP_CHARGE_FAIL,
 	SCAN_TRUNCATED,
 	SCAN_PAGE_HAS_PRIVATE,
+	SCAN_COPY_MC,
 };
 
 #define CREATE_TRACE_POINTS
@@ -541,6 +543,27 @@ static bool is_refcount_suitable(struct page *page)
 	return page_count(page) == expected_refcount;
 }
 
+/*
+ * Copies memory with #MC in source page (@from) handled. Returns number
+ * of bytes not copied if there was an exception; otherwise 0 for success.
+ * Note handling #MC requires arch opt-in.
+ */
+static int copy_mc_page(struct page *to, struct page *from)
+{
+	char *vfrom, *vto;
+	unsigned long ret;
+
+	vfrom = kmap_local_page(from);
+	vto = kmap_local_page(to);
+	ret = copy_mc_to_kernel(vto, vfrom, PAGE_SIZE);
+	if (ret == 0)
+		kmsan_copy_page_meta(to, from);
+	kunmap_local(vto);
+	kunmap_local(vfrom);
+
+	return ret;
+}
+
 static int __collapse_huge_page_isolate(struct vm_area_struct *vma,
 					unsigned long address,
 					pte_t *pte,
@@ -681,56 +704,124 @@ out:
 	return result;
 }
 
-static void __collapse_huge_page_copy(pte_t *pte, struct page *page,
-				      struct vm_area_struct *vma,
-				      unsigned long address,
-				      spinlock_t *ptl,
-				      struct list_head *compound_pagelist)
+/*
+ * __collapse_huge_page_copy - attempts to copy memory contents from normal
+ * pages to a hugepage. Cleans up the normal pages if copying succeeds;
+ * otherwise restores the original page table and releases isolated normal pages.
+ * Returns SCAN_SUCCEED if copying succeeds, otherwise returns SCAN_COPY_MC.
+ *
+ * @pte: starting of the PTEs to copy from
+ * @page: the new hugepage to copy contents to
+ * @pmd: pointer to the new hugepage's PMD
+ * @rollback: the original normal pages' PMD
+ * @vma: the original normal pages' virtual memory area
+ * @address: starting address to copy
+ * @pte_ptl: lock on normal pages' PTEs
+ * @compound_pagelist: list that stores compound pages
+ */
+static int __collapse_huge_page_copy(pte_t *pte,
+				     struct page *page,
+				     pmd_t *pmd,
+				     pmd_t rollback,
+				     struct vm_area_struct *vma,
+				     unsigned long address,
+				     spinlock_t *pte_ptl,
+				     struct list_head *compound_pagelist)
 {
 	struct page *src_page, *tmp;
 	pte_t *_pte;
-	for (_pte = pte; _pte < pte + HPAGE_PMD_NR;
-				_pte++, page++, address += PAGE_SIZE) {
-		pte_t pteval = *_pte;
+	pte_t pteval;
+	unsigned long _address;
+	spinlock_t *pmd_ptl;
+	int result = SCAN_SUCCEED;
 
-		if (pte_none(pteval) || is_zero_pfn(pte_pfn(pteval))) {
-			clear_user_highpage(page, address);
-			add_mm_counter(vma->vm_mm, MM_ANONPAGES, 1);
-			if (is_zero_pfn(pte_pfn(pteval))) {
-				/*
-				 * ptl mostly unnecessary.
-				 */
-				spin_lock(ptl);
-				ptep_clear(vma->vm_mm, address, _pte);
-				spin_unlock(ptl);
-			}
-		} else {
+	/*
+	 * Copying pages' contents is subject to memory poison at any iteration.
+	 */
+	for (_pte = pte, _address = address; _pte < pte + HPAGE_PMD_NR;
+	     _pte++, page++, _address += PAGE_SIZE) {
+		pteval = *_pte;
+
+		if (pte_none(pteval) || is_zero_pfn(pte_pfn(pteval)))
+			clear_user_highpage(page, _address);
+		else {
 			src_page = pte_page(pteval);
-			copy_user_highpage(page, src_page, address, vma);
-			if (!PageCompound(src_page))
-				release_pte_page(src_page);
-			/*
-			 * ptl mostly unnecessary, but preempt has to
-			 * be disabled to update the per-cpu stats
-			 * inside page_remove_rmap().
-			 */
-			spin_lock(ptl);
-			ptep_clear(vma->vm_mm, address, _pte);
-			page_remove_rmap(src_page, vma, false);
-			spin_unlock(ptl);
-			free_page_and_swap_cache(src_page);
+			if (copy_mc_page(page, src_page) > 0) {
+				result = SCAN_COPY_MC;
+				break;
+			}
 		}
 	}
 
-	list_for_each_entry_safe(src_page, tmp, compound_pagelist, lru) {
-		list_del(&src_page->lru);
-		mod_node_page_state(page_pgdat(src_page),
-				    NR_ISOLATED_ANON + page_is_file_lru(src_page),
-				    -compound_nr(src_page));
-		unlock_page(src_page);
-		free_swap_cache(src_page);
-		putback_lru_page(src_page);
+	if (likely(result == SCAN_SUCCEED)) {
+		for (_pte = pte, _address = address; _pte < pte + HPAGE_PMD_NR;
+		     _pte++, _address += PAGE_SIZE) {
+			pteval = *_pte;
+			if (pte_none(pteval) || is_zero_pfn(pte_pfn(pteval))) {
+				add_mm_counter(vma->vm_mm, MM_ANONPAGES, 1);
+				if (is_zero_pfn(pte_pfn(pteval))) {
+					/*
+					 * pte_ptl mostly unnecessary.
+					 */
+					spin_lock(pte_ptl);
+					pte_clear(vma->vm_mm, _address, _pte);
+					spin_unlock(pte_ptl);
+				}
+			} else {
+				src_page = pte_page(pteval);
+				if (!PageCompound(src_page))
+					release_pte_page(src_page);
+				/*
+				 * pte_ptl mostly unnecessary, but preempt has
+				 * to be disabled to update the per-cpu stats
+				 * inside page_remove_rmap().
+				 */
+				spin_lock(pte_ptl);
+				ptep_clear(vma->vm_mm, _address, _pte);
+				page_remove_rmap(src_page, vma, false);
+				spin_unlock(pte_ptl);
+				free_page_and_swap_cache(src_page);
+			}
+		}
+		list_for_each_entry_safe(src_page, tmp, compound_pagelist, lru) {
+			list_del(&src_page->lru);
+			mod_node_page_state(page_pgdat(src_page),
+					NR_ISOLATED_ANON + page_is_file_lru(src_page),
+					-compound_nr(src_page));
+			unlock_page(src_page);
+			free_swap_cache(src_page);
+			putback_lru_page(src_page);
+		}
+	} else {
+		/*
+		 * Re-establish the regular PMD that points to the regular
+		 * page table. Restoring PMD needs to be done prior to
+		 * releasing pages. Since pages are still isolated and
+		 * locked here, acquiring anon_vma_lock_write is unnecessary.
+		 */
+		pmd_ptl = pmd_lock(vma->vm_mm, pmd);
+		pmd_populate(vma->vm_mm, pmd, pmd_pgtable(rollback));
+		spin_unlock(pmd_ptl);
+		/*
+		 * Release both raw and compound pages isolated
+		 * in __collapse_huge_page_isolate.
+		 */
+		for (_pte = pte, _address = address; _pte < pte + HPAGE_PMD_NR;
+		     _pte++, _address += PAGE_SIZE) {
+			pteval = *_pte;
+			if (!pte_none(pteval) && !is_zero_pfn(pte_pfn(pteval))) {
+				src_page = pte_page(pteval);
+				if (!PageCompound(src_page))
+					release_pte_page(src_page);
+			}
+		}
+		list_for_each_entry_safe(src_page, tmp, compound_pagelist, lru) {
+			list_del(&src_page->lru);
+			release_pte_page(src_page);
+		}
 	}
+
+	return result;
 }
 
 static void khugepaged_alloc_sleep(void)
@@ -1098,9 +1189,13 @@ static int collapse_huge_page(struct mm_struct *mm, unsigned long address,
 	 */
 	anon_vma_unlock_write(vma->anon_vma);
 
-	__collapse_huge_page_copy(pte, hpage, vma, address, pte_ptl,
-				  &compound_pagelist);
+	result = __collapse_huge_page_copy(pte, hpage, pmd, _pmd,
+					   vma, address, pte_ptl,
+					   &compound_pagelist);
 	pte_unmap(pte);
+	if (unlikely(result != SCAN_SUCCEED))
+		goto out_up_write;
+
 	/*
 	 * spin_lock() below is not the equivalent of smp_wmb(), but
 	 * the smp_wmb() inside __SetPageUptodate() can be reused to
