@@ -794,6 +794,7 @@ static inline void clean_rmap_item_zero_flag(struct ksm_rmap_item *rmap_item)
 {
 	if (rmap_item->address & ZERO_PAGE_FLAG) {
 		ksm_zero_pages_sharing--;
+		rmap_item->mm->ksm_zero_pages_sharing--;
 		rmap_item->address &= PAGE_MASK;
 	}
 }
@@ -2116,6 +2117,7 @@ static int try_to_merge_with_kernel_zero_page(struct ksm_rmap_item *rmap_item,
 			if (!err) {
 				rmap_item->address |= ZERO_PAGE_FLAG;
 				ksm_zero_pages_sharing++;
+				rmap_item->mm->ksm_zero_pages_sharing++;
 			}
 		} else {
 			/* If the vma is out of date, we do not need to continue. */
