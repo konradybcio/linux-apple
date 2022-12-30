@@ -2213,23 +2213,36 @@ static void cmp_and_merge_page(struct page *page, struct ksm_rmap_item *rmap_ite
 	}
 }
 
+static struct ksm_rmap_item *try_to_get_old_rmap_item(unsigned long addr,
+					 struct ksm_rmap_item **rmap_list)
+{
+	while (*rmap_list) {
+		struct ksm_rmap_item *rmap_item = *rmap_list;
+		if ((rmap_item->address & PAGE_MASK) == addr)
+			return rmap_item;
+		if (rmap_item->address > addr)
+			break;
+		*rmap_list = rmap_item->rmap_list;
+		/* Running here indicates it's vma has been UNMERGEABLE */
+		remove_rmap_item_from_tree(rmap_item);
+		free_rmap_item(rmap_item);
+	}
+
+	return NULL;
+}
+
 static struct ksm_rmap_item *get_next_rmap_item(struct ksm_mm_slot *mm_slot,
 					    struct ksm_rmap_item **rmap_list,
 					    unsigned long addr)
 {
 	struct ksm_rmap_item *rmap_item;
 
-	while (*rmap_list) {
-		rmap_item = *rmap_list;
-		if ((rmap_item->address & PAGE_MASK) == addr)
-			return rmap_item;
-		if (rmap_item->address > addr)
-			break;
-		*rmap_list = rmap_item->rmap_list;
-		remove_rmap_item_from_tree(rmap_item);
-		free_rmap_item(rmap_item);
-	}
+	/* lookup if we have a old rmap_item matching the addr*/
+	rmap_item = try_to_get_old_rmap_item(addr, rmap_list);
+	if (rmap_item)
+		return rmap_item;
 
+	/* Need to allocate a new rmap_item */
 	rmap_item = alloc_rmap_item();
 	if (rmap_item) {
 		/* It has already been zeroed */
