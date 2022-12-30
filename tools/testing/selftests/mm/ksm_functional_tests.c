@@ -27,6 +27,8 @@
 
 static int ksm_fd;
 static int ksm_full_scans_fd;
+static int ksm_zero_pages_fd;
+static int ksm_use_zero_pages_fd;
 static int pagemap_fd;
 static size_t pagesize;
 
@@ -57,6 +59,22 @@ static bool range_maps_duplicates(char *addr, unsigned long size)
 	return false;
 }
 
+static bool check_ksm_zero_pages_count(unsigned long zero_size)
+{
+	unsigned long pages_expected = zero_size / (4 * KiB);
+	char buf[20];
+	ssize_t read_size;
+	unsigned long ksm_zero_pages;
+
+	read_size = pread(ksm_zero_pages_fd, buf, sizeof(buf) - 1, 0);
+	if (read_size < 0)
+		return -errno;
+	buf[read_size] = 0;
+	ksm_zero_pages = strtol(buf, NULL, 10);
+
+	return ksm_zero_pages == pages_expected;
+}
+
 static long ksm_get_full_scans(void)
 {
 	char buf[10];
@@ -70,15 +88,12 @@ static long ksm_get_full_scans(void)
 	return strtol(buf, NULL, 10);
 }
 
-static int ksm_merge(void)
+static int wait_two_full_scans(void)
 {
 	long start_scans, end_scans;
 
-	/* Wait for two full scans such that any possible merging happened. */
 	start_scans = ksm_get_full_scans();
 	if (start_scans < 0)
-		return start_scans;
-	if (write(ksm_fd, "1", 1) != 1)
 		return -errno;
 	do {
 		end_scans = ksm_get_full_scans();
@@ -87,6 +102,34 @@ static int ksm_merge(void)
 	} while (end_scans < start_scans + 2);
 
 	return 0;
+}
+
+static inline int ksm_merge(void)
+{
+	/* Wait for two full scans such that any possible merging happened. */
+	if (write(ksm_fd, "1", 1) != 1)
+		return -errno;
+	return wait_two_full_scans();
+}
+
+static inline int make_cow(char *map, char val, unsigned long size)
+{
+
+	memset(map, val, size);
+	return wait_two_full_scans();
+}
+
+static int unmerge_zero_page(char *start, unsigned long size)
+{
+	int ret;
+
+	ret = madvise(start, size, MADV_UNMERGEABLE);
+	if (ret) {
+		ksft_test_result_fail("MADV_UNMERGEABLE failed\n");
+		return ret;
+	}
+
+	return wait_two_full_scans();
 }
 
 static char *mmap_and_merge_range(char val, unsigned long size)
@@ -142,6 +185,56 @@ static void test_unmerge(void)
 
 	ksft_test_result(!range_maps_duplicates(map, size),
 			 "Pages were unmerged\n");
+unmap:
+	munmap(map, size);
+}
+
+static void test_unmerge_zero_pages(void)
+{
+	const unsigned int size = 2 * MiB;
+	char *map;
+
+	ksft_print_msg("[RUN] %s\n", __func__);
+
+	/* Confirm the interfaces*/
+	ksm_zero_pages_fd = open("/sys/kernel/mm/ksm/zero_pages_sharing", O_RDONLY);
+	if (ksm_zero_pages_fd < 0) {
+		ksft_test_result_skip("open(\"/sys/kernel/mm/ksm/zero_pages_sharing\") failed\n");
+		return;
+	}
+	ksm_use_zero_pages_fd = open("/sys/kernel/mm/ksm/use_zero_pages", O_RDWR);
+	if (ksm_use_zero_pages_fd < 0) {
+		ksft_test_result_skip("open \"/sys/kernel/mm/ksm/use_zero_pages\" failed\n");
+		return;
+	}
+	if (write(ksm_use_zero_pages_fd, "1", 1) != 1) {
+		ksft_test_result_skip("write \"/sys/kernel/mm/ksm/use_zero_pages\" failed\n");
+		return;
+	}
+
+	/* Mmap zero pages*/
+	map = mmap_and_merge_range(0x00, size);
+
+	/* Case 1: make Writing on ksm zero pages (COW) */
+	if (make_cow(map, 0xcf, size / 2)) {
+		ksft_test_result_fail("COW failed\n");
+		goto unmap;
+	}
+	ksft_test_result(check_ksm_zero_pages_count(size / 2),
+						"zero page count react to cow\n");
+
+	/* Case 2: Call madvise(xxx, MADV_UNMERGEABLE)*/
+	if (unmerge_zero_page(map + size / 2, size / 4)) {
+		ksft_test_result_fail("unmerge_zero_page failed\n");
+		goto unmap;
+	}
+	ksft_test_result(check_ksm_zero_pages_count(size / 4),
+						"zero page count react to unmerge\n");
+
+	/*Check if ksm pages are really unmerged */
+	ksft_test_result(!range_maps_duplicates(map + size / 2, size / 4),
+						"KSM zero pages were unmerged\n");
+
 unmap:
 	munmap(map, size);
 }
@@ -261,11 +354,13 @@ int main(int argc, char **argv)
 	ksm_full_scans_fd = open("/sys/kernel/mm/ksm/full_scans", O_RDONLY);
 	if (ksm_full_scans_fd < 0)
 		ksft_exit_skip("open(\"/sys/kernel/mm/ksm/full_scans\") failed\n");
+
 	pagemap_fd = open("/proc/self/pagemap", O_RDONLY);
 	if (pagemap_fd < 0)
 		ksft_exit_skip("open(\"/proc/self/pagemap\") failed\n");
 
 	test_unmerge();
+	test_unmerge_zero_pages();
 	test_unmerge_discarded();
 #ifdef __NR_userfaultfd
 	test_unmerge_uffd_wp();
