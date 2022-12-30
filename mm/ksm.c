@@ -276,6 +276,9 @@ static unsigned int zero_checksum __read_mostly;
 /* Whether to merge empty (zeroed) pages with actual zero pages */
 static bool ksm_use_zero_pages __read_mostly;
 
+/* The number of zero pages placed by KSM use_zero_pages */
+static unsigned long ksm_zero_pages_sharing;
+
 #ifdef CONFIG_NUMA
 /* Zeroed when merging across nodes is not allowed */
 static unsigned int ksm_merge_across_nodes = 1;
@@ -789,8 +792,10 @@ stale:
  */
 static inline void clean_rmap_item_zero_flag(struct ksm_rmap_item *rmap_item)
 {
-	if (rmap_item->address & ZERO_PAGE_FLAG)
+	if (rmap_item->address & ZERO_PAGE_FLAG) {
+		ksm_zero_pages_sharing--;
 		rmap_item->address &= PAGE_MASK;
+	}
 }
 
 /* Only called when rmap_item is going to be freed */
@@ -2108,8 +2113,10 @@ static int try_to_merge_with_kernel_zero_page(struct ksm_rmap_item *rmap_item,
 		if (vma) {
 			err = try_to_merge_one_page(vma, page,
 						ZERO_PAGE(rmap_item->address));
-			if (!err)
+			if (!err) {
 				rmap_item->address |= ZERO_PAGE_FLAG;
+				ksm_zero_pages_sharing++;
+			}
 		} else {
 			/* If the vma is out of date, we do not need to continue. */
 			err = 0;
@@ -3228,6 +3235,13 @@ static ssize_t pages_volatile_show(struct kobject *kobj,
 }
 KSM_ATTR_RO(pages_volatile);
 
+static ssize_t zero_pages_sharing_show(struct kobject *kobj,
+				struct kobj_attribute *attr, char *buf)
+{
+	return sysfs_emit(buf, "%ld\n", ksm_zero_pages_sharing);
+}
+KSM_ATTR_RO(zero_pages_sharing);
+
 static ssize_t stable_node_dups_show(struct kobject *kobj,
 				     struct kobj_attribute *attr, char *buf)
 {
@@ -3283,6 +3297,7 @@ static struct attribute *ksm_attrs[] = {
 	&pages_sharing_attr.attr,
 	&pages_unshared_attr.attr,
 	&pages_volatile_attr.attr,
+	&zero_pages_sharing_attr.attr,
 	&full_scans_attr.attr,
 #ifdef CONFIG_NUMA
 	&merge_across_nodes_attr.attr,
