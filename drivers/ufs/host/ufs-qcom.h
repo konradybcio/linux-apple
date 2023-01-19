@@ -16,6 +16,7 @@
 #define HBRN8_POLL_TOUT_MS      100
 #define DEFAULT_CLK_RATE_HZ     1000000
 #define BUS_VECTOR_NAME_LEN     32
+#define MAX_SUPP_MAC		64
 
 #define UFS_HW_VER_MAJOR_MASK	GENMASK(31, 28)
 #define UFS_HW_VER_MINOR_MASK	GENMASK(27, 16)
@@ -51,6 +52,8 @@ enum {
 	 * added in HW Version 3.0.0
 	 */
 	UFS_AH8_CFG				= 0xFC,
+
+	REG_UFS_CFG3				= 0x271C,
 };
 
 /* QCOM UFS host controller vendor specific debug registers */
@@ -68,6 +71,10 @@ enum {
 	UFS_UFS_DBG_RD_PRDT_RAM			= 0x1700,
 	UFS_UFS_DBG_RD_RESP_RAM			= 0x1800,
 	UFS_UFS_DBG_RD_EDTL_RAM			= 0x1900,
+};
+
+enum {
+	UFS_MEM_CQIS_VS		= 0x8,
 };
 
 #define UFS_CNTLR_2_x_x_VEN_REGS_OFFSET(x)	(0x000 + x)
@@ -212,6 +219,9 @@ struct ufs_qcom_host {
 	struct gpio_desc *device_reset;
 
 	u32 hs_gear;
+
+	int esi_base;
+	bool esi_enabled;
 };
 
 static inline u32
