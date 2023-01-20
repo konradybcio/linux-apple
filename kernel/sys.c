@@ -2628,6 +2628,15 @@ SYSCALL_DEFINE5(prctl, int, option, unsigned long, arg2, unsigned long, arg3,
 	case PR_SET_VMA:
 		error = prctl_set_vma(arg2, arg3, arg4, arg5);
 		break;
+	case PR_SET_HIDE_SELF_EXE:
+		if (arg2 != 1 || arg3 || arg4 || arg5)
+			return -EINVAL;
+		task_set_hide_self_exe(current);
+		break;
+	case PR_GET_HIDE_SELF_EXE:
+		if (arg2 || arg3 || arg4 || arg5)
+			return -EINVAL;
+		return task_hide_self_exe(current) ? 1 : 0;
 	default:
 		error = -EINVAL;
 		break;

@@ -1855,6 +1855,7 @@ static int bprm_execve(struct linux_binprm *bprm,
 	/* execve succeeded */
 	current->fs->in_exec = 0;
 	current->in_execve = 0;
+	task_clear_hide_self_exe(current);
 	rseq_execve(current);
 	acct_update_integrals(current);
 	task_numa_free(current, false);
