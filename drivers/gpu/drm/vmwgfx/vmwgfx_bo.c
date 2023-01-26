@@ -194,7 +194,7 @@ int vmw_bo_pin_in_start_of_vram(struct vmw_private *dev_priv,
 	int ret = 0;
 
 	place = vmw_vram_placement.placement[0];
-	place.lpfn = bo->resource->num_pages;
+	place.lpfn = PFN_UP(bo->resource->size);
 	placement.num_placement = 1;
 	placement.placement = &place;
 	placement.num_busy_placement = 1;
@@ -211,7 +211,7 @@ int vmw_bo_pin_in_start_of_vram(struct vmw_private *dev_priv,
 	 * that situation.
 	 */
 	if (bo->resource->mem_type == TTM_PL_VRAM &&
-	    bo->resource->start < bo->resource->num_pages &&
+	    bo->resource->start < PFN_UP(bo->resource->size) &&
 	    bo->resource->start > 0 &&
 	    buf->base.pin_count == 0) {
 		ctx.interruptible = false;
@@ -352,7 +352,7 @@ void *vmw_bo_map_and_cache(struct vmw_buffer_object *vbo)
 	if (virtual)
 		return virtual;
 
-	ret = ttm_bo_kmap(bo, 0, bo->resource->num_pages, &vbo->map);
+	ret = ttm_bo_kmap(bo, 0, PFN_UP(bo->base.size), &vbo->map);
 	if (ret)
 		DRM_ERROR("Buffer object map failed: %d.\n", ret);
 
@@ -716,44 +716,6 @@ int vmw_user_bo_lookup(struct drm_file *filp,
 }
 
 /**
- * vmw_user_bo_noref_lookup - Look up a vmw user buffer object without reference
- * @filp: The TTM object file the handle is registered with.
- * @handle: The user buffer object handle.
- *
- * This function looks up a struct vmw_bo and returns a pointer to the
- * struct vmw_buffer_object it derives from without refcounting the pointer.
- * The returned pointer is only valid until vmw_user_bo_noref_release() is
- * called, and the object pointed to by the returned pointer may be doomed.
- * Any persistent usage of the object requires a refcount to be taken using
- * ttm_bo_reference_unless_doomed(). Iff this function returns successfully it
- * needs to be paired with vmw_user_bo_noref_release() and no sleeping-
- * or scheduling functions may be called in between these function calls.
- *
- * Return: A struct vmw_buffer_object pointer if successful or negative
- * error pointer on failure.
- */
-struct vmw_buffer_object *
-vmw_user_bo_noref_lookup(struct drm_file *filp, u32 handle)
-{
-	struct vmw_buffer_object *vmw_bo;
-	struct ttm_buffer_object *bo;
-	struct drm_gem_object *gobj = drm_gem_object_lookup(filp, handle);
-
-	if (!gobj) {
-		DRM_ERROR("Invalid buffer object handle 0x%08lx.\n",
-			  (unsigned long)handle);
-		return ERR_PTR(-ESRCH);
-	}
-	vmw_bo = gem_to_vmw_bo(gobj);
-	bo = ttm_bo_get_unless_zero(&vmw_bo->base);
-	vmw_bo = vmw_buffer_object(bo);
-	drm_gem_object_put(gobj);
-
-	return vmw_bo;
-}
-
-
-/**
  * vmw_bo_fence_single - Utility function to fence a single TTM buffer
  *                       object without unreserving it.
  *
@@ -807,9 +769,23 @@ int vmw_dumb_create(struct drm_file *file_priv,
 {
 	struct vmw_private *dev_priv = vmw_priv(dev);
 	struct vmw_buffer_object *vbo;
+	int cpp = DIV_ROUND_UP(args->bpp, 8);
 	int ret;
 
-	args->pitch = args->width * ((args->bpp + 7) / 8);
+	switch (cpp) {
+	case 1: /* DRM_FORMAT_C8 */
+	case 2: /* DRM_FORMAT_RGB565 */
+	case 4: /* DRM_FORMAT_XRGB8888 */
+		break;
+	default:
+		/*
+		 * Dumb buffers don't allow anything else.
+		 * This is tested via IGT's dumb_buffers
+		 */
+		return -EINVAL;
+	}
+
+	args->pitch = args->width * cpp;
 	args->size = ALIGN(args->pitch * args->height, PAGE_SIZE);
 
 	ret = vmw_gem_object_create_with_handle(dev_priv, file_priv,
