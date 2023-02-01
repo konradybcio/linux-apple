@@ -1,0 +1,242 @@
+arm/soc
+	omap/omap2-cleanup
+		https://git.kernel.org/pub/scm/linux/kernel/git/soc/soc omap/omap2-cleanup
+	omap/cleanup
+		git://git.kernel.org/pub/scm/linux/kernel/git/tmlind/linux-omap tags/omap-for-v6.3/cleanup-signed
+	omap1/cleanup
+		git://git.kernel.org/pub/scm/linux/kernel/git/tmlind/linux-omap tags/omap-for-v6.3/omap1-signed
+	patch
+		ARM: ep93xx: Convert to use descriptors for GPIO LEDs
+		arm64: drop redundant "ARMv8" from Kconfig option title
+	at91/soc
+		https://git.kernel.org/pub/scm/linux/kernel/git/at91/linux tags/at91-soc-6.3
+	broadcom/soc
+		https://github.com/Broadcom/stblinux tags/arm-soc/for-6.3/soc
+	samsung/soc
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-soc-6.3
+	imx/soc
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-soc-6.3
+	zync/soc-2
+		https://github.com/Xilinx/linux-xlnx tags/zynq-soc-for-v6.3
+
+soc/dt
+
+soc/drivers
+	renesas/drivers
+		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-drivers-for-v6.3-tag1
+	<no branch> (32a55bbdd74e2bb76a76979bc4f37e7e7ebe620d)
+		git://git.kernel.org/pub/scm/linux/kernel/git/sudeep.holla/linux tags/scmi-updates-6.3
+	drivers/memory
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-mem-ctrl tags/memory-controller-drv-6.3-2
+	riscv/drivers
+		https://git.kernel.org/pub/scm/linux/kernel/git/conor/linux tags/riscv-soc-for-v6.3-mw0
+	renesas/drivers-2
+		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-drivers-for-v6.3-tag2
+	sunxi/drivers
+		https://git.kernel.org/pub/scm/linux/kernel/git/sunxi/linux tags/sunxi-drivers-for-6.3-1
+	broadcom/drivers
+		https://github.com/Broadcom/stblinux tags/arm-soc/for-6.3/drivers
+	imx/drivers
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-drivers-6.3
+	amlogic/drivers
+		https://git.kernel.org/pub/scm/linux/kernel/git/amlogic/linux tags/amlogic-drivers-for-v6.3
+	patch
+		soc: sunxi: select CONFIG_PM
+		soc: nuvoton: Add SoC info driver for WPCM450
+	xilinx/soc
+		https://github.com/Xilinx/linux-xlnx tags/zynqmp-soc-for-v6.3
+
+arm/defconfig
+
+arm/late
+
+arm/fixes
+	patch
+		ARM: dts: aspeed: Fix pca9849 compatible
+		MAINTAINERS: amd: drop inactive Brijesh Singh
+	sunxi/fixws
+		https://git.kernel.org/pub/scm/linux/kernel/git/sunxi/linux tags/sunxi-fixes-for-6.2-1
+	imx/fixes
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-fixes-6.2-2
+	patch
+		MAINTAINERS: Update entry for MediaTek SoC support
+		ARM: dts: wpcm450: Add nuvoton,shm = <&shm> to FIU node
+
+arm/boardfile-remove
+	patch
+		ARM: at91: remove stale MAINTAINER file entries
+		ARM: cns3xxx: remove entire platform
+		mmc: remove cns3xxx driver
+		ARM: ep93xx: remove old board files
+		ASoC: remove unused ep93xx files
+		ARM: mv78xx0: un-deprecate Terastation WXL
+		ARM: orion: remove unused board files
+		ARM: orion5x: remove dsa_chip_data references
+		ARM: iop32x: remove the platform
+		gpio: remove iop driver
+		ARM: footbridge: remove CATS
+		ARM: omap1: remove unused board files
+		ARM: omap1: remove osk-mistral add-on board support
+		ARM: omap1: remove dead code
+		ARM: omap1: merge omap1_map_io functions
+		ARM: omap1: remove unused omapxxxx.h headers
+		usb: phy: remove phy-isp1301-omap driver
+		fbdev: omapfb: remove unused board support
+		spi: remove omap 100K driver
+		ARM: davinci: remove unused board support
+		ARM: davinci: drop DAVINCI_DMxxx references
+		ARM: davinci: clean up platform support
+		clk: remove davinci dm3xx drivers
+		input: remove davinci keyboard driver
+		ASoC: remove unused davinci support
+		irqchip: remove davinci aintc driver
+		staging: media: remove davinci vpfe_capture driver
+		media: davinci: remove vpbe support
+		ARM: sa1100: un-deprecate jornada720
+		ARM: sa1100: remove unused board files
+		ARM: sa1100: remove irda references
+		cpufreq: remove sa1100 driver
+		ARM: mmp: select specific CPU implementation
+		ARM: mmp: remove all board files
+		ARM: mmp: remove custom sram code
+		ARM: mmp: remove device definitions
+		ARM: mmp: remove old PM support
+		ARM: s3c: remove all s3c24xx support
+		ARM: s3c: remove s3c24xx specific hacks
+		ARM: s3c: remove most s3c64xx board support
+		ARM: s3c: remove adc.c
+		ARM: s3c: simplify platform code
+		ARM: s3c: remove s3c6400 support
+		power: remove s3c adc battery driver
+		hwmon: remove s3c driver
+		pata: remove samsung_cf driver
+		mmc: remove s3cmci driver
+		clk: remove s3c24xx driver
+		clk: samsung: remove s3c24xx specific pll bits
+		leds: remove s3c24xx driver
+		usb: gadget: remove s3c24xx drivers
+		dmaengine: remove s3c24xx driver
+		cpufreq: remove s3c24xx drivers
+		fbdev: remove s3c2410 framebuffer
+		input: remove s3c24xx touchscreen driver
+		pinctrl: remove s3c24xx driver
+		spi: remove s3c24xx driver
+		soc: s3c: remove pm-debug hack
+		ASoC: samsung: remove unused drivers
+		parport: remove ax88796 driver
+		ARM: pxa: remove unused board files
+		ARM: pxa: remove pxa93x support
+		ARM: pxa: remove irda leftover
+		ARM: pxa: remove unused pxa3xx-ulpi
+		ARM: pxa: prune unused device support
+		power: remove z2_battery driver
+		power: remove tosa_battery driver
+		ata: remove palmld pata driver
+		input: remove pxa930_trkball driver
+		input: remove pxa930_rotary keyboard driver
+		input: remove zylonite touchscreen driver
+		pcmcia: remove unused pxa/sa1100 drivers
+		ASoC: pxa: remove unused board support
+		power: remove pda_power supply driver
+		rtc: remove v3020 driver
+		mfd: remove toshiba tmio drivers
+		mfd: remove ucb1400 support
+		mmc: remove tmio_mmc driver
+		fbdev: remove tmiofb driver
+		fbdev: remove w100fb driver
+		usb: remove ohci-tmio driver
+		w1: remove ds1wm driver
+		mfd: remove htc-pasic3 driver
+		ARM: remove CONFIG_UNUSED_BOARD_FILES
+		MAINTAINERS: update file entries after arm multi-platform rework and mach-pxa removal
+		MAINTAINERS: adjust SAMSUNG SOC CLOCK DRIVERS after s3c24xx support removal
+		ARM: s3c: remove obsolete s3c-cpu-freq header
+		ARM: debug: remove references in DEBUG_UART_8250_SHIFT to removed configs
+		usb: ohci-omap: avoid unused-variable warning
+
+arm/dt
+	renesas/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-dts-for-v6.3-tag1
+	at91/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/at91/linux tags/at91-dt-6.3
+	dt/cleanup-dt64
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-dt tags/dt64-cleanup-6.3
+	samsung/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-dt64-6.3
+	omap/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/tmlind/linux-omap tags/omap-for-v6.3/dt-signed
+	samsung/bindings
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-drivers-6.3
+	gemini/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-nomadik tags/gemini-dts-v6.3
+	patch
+		ARM: dts: intel-ixp42x-welltech-epbx100: add ethernet node
+	dt/cleanup
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-dt tags/dt-cleanup-6.3
+	ux500/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/linusw/linux-nomadik tags/ux500-dts-v6.3
+	qcom/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-dts-for-6.3
+	riscv/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/conor/linux tags/riscv-dt-for-v6.3-mw0
+	qcom/dt64
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-for-6.3
+	renesas/dt-bindings
+		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-dt-bindings-for-v6.3-tag1
+	renesas/dt-2
+		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-dts-for-v6.3-tag2
+	tegra/dt-bindinds
+		git://git.kernel.org/pub/scm/linux/kernel/git/tegra/linux tags/tegra-for-6.3-dt-bindings
+	tegra/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/tegra/linux tags/tegra-for-6.3-arm-dt
+	tegra/dt64
+		git://git.kernel.org/pub/scm/linux/kernel/git/tegra/linux tags/tegra-for-6.3-arm64-dt
+	sunxi/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/sunxi/linux tags/sunxi-dt-for-6.3-1
+	broadcom/dt
+		https://github.com/Broadcom/stblinux tags/arm-soc/for-6.3/devicetree
+	broadcom/dt64
+		https://github.com/Broadcom/stblinux tags/arm-soc/for-6.3/devicetree-arm64
+	samsung/dt-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-dt-6.3
+	samsung/dt64
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-dt64-6.3-2
+	dt/cleanup-dt64-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-dt tags/dt64-cleanup-6.3-2
+	dt/cleanup-dt-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-dt tags/dt-cleanup-6.3-2
+	imx/dt-bindings
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-bindings-6.3
+	imx/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-dt-6.3
+	imx/dt64
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-dt64-6.3
+	amlogic/dt64
+		https://git.kernel.org/pub/scm/linux/kernel/git/amlogic/linux tags/amlogic-arm64-dt-for-v6.3
+	amlogic/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/amlogic/linux tags/amlogic-arm-dt-for-v6.3
+	zynq/dt64
+		https://github.com/Xilinx/linux-xlnx tags/zynqmp-dt-for-v6.3
+	zynq/dt
+		https://github.com/Xilinx/linux-xlnx tags/zynq-dt-for-v6.3
+
+soc/defconfig
+	patch
+		ARM: multi_v7_defconfig: Enable wm896x audio CODECs
+		ARM: multi_v5_defconfig: Enable I2C_GPIO
+	renesas/defconfig
+		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-arm-defconfig-for-v6.3-tag1
+	patch
+		ARM: multi_v7_defconfig: Add options to support TQMLS102xA series
+		kbuild: Add config fragment merge functionality
+		ARM: add multi_v7_lpae_defconfig
+		ARM: multi_v7_defconfig: Add GXP Fan and SPI support
+	allwinner/defconfig
+		https://git.kernel.org/pub/scm/linux/kernel/git/sunxi/linux tags/sunxi-config-for-6.3-1
+	broadcom/defconfig
+		https://github.com/Broadcom/stblinux tags/arm-soc/for-6.3/defconfig
+	imx/defconfig
+		git://git.kernel.org/pub/scm/linux/kernel/git/shawnguo/linux tags/imx-defconfig-6.3
+	patch
+		ARM: Add wpcm450_defconfig for Nuvoton WPCM450
+
