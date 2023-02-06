@@ -47,6 +47,11 @@ soc/drivers
 		https://github.com/Xilinx/linux-xlnx tags/zynqmp-soc-for-v6.3
 	mediatek/drivers
 		https://git.kernel.org/pub/scm/linux/kernel/git/matthias.bgg/linux tags/v6.2-next-soc
+	samsung/drivers-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-drivers-6.3-2
+		contains samsung/bindings
+	apple/rtkit-pmgr
+		https://github.com/AsahiLinux/linux tags/asahi-soc-rtkit-pmgr-6.3
 
 arm/defconfig
 
@@ -227,8 +232,10 @@ arm/dt
 		git://git.kernel.org/pub/scm/linux/kernel/git/atorgue/stm32 tags/stm32-dt-for-v6.3-1
 	mvebu/dt
 		git://git.kernel.org/pub/scm/linux/kernel/git/gclement/mvebu tags/mvebu-dt-6.3-1
-	<no branch> (5a7363821281f981b3f6cb8e77d1868d092705c8)
+	mvebu/dt64
 		git://git.kernel.org/pub/scm/linux/kernel/git/gclement/mvebu tags/mvebu-dt64-6.3-1
+	k3/dt
+		https://git.kernel.org/pub/scm/linux/kernel/git/ti/linux tags/ti-k3-dt-for-v6.3
 
 soc/defconfig
 	patch
@@ -253,4 +260,5 @@ soc/defconfig
 		https://git.kernel.org/pub/scm/linux/kernel/git/matthias.bgg/linux tags/v6.2-next-defconfig
 	patch
 		ARM: configs: multi_v7: enable NVMEM driver for STM32
+		ARM: defconfig: Add IOSCHED_BFQ to the default configs
 
