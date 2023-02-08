@@ -1338,6 +1338,9 @@ static void __svm_vcpu_reset(struct kvm_vcpu *vcpu)
 	vcpu->arch.microcode_version = 0x01000065;
 	svm->tsc_ratio_msr = kvm_caps.default_tsc_scaling_ratio;
 
+	svm->nmi_masked = false;
+	svm->awaiting_iret_completion = false;
+
 	if (sev_es_guest(vcpu->kvm))
 		sev_es_vcpu_reset(svm);
 }
@@ -2482,7 +2485,7 @@ static int iret_interception(struct kvm_vcpu *vcpu)
 	struct vcpu_svm *svm = to_svm(vcpu);
 
 	++vcpu->stat.nmi_window_exits;
-	vcpu->arch.hflags |= HF_IRET_MASK;
+	svm->awaiting_iret_completion = true;
 	if (!sev_es_guest(vcpu->kvm)) {
 		svm_clr_intercept(svm, INTERCEPT_IRET);
 		svm->nmi_iret_rip = kvm_rip_read(vcpu);
@@ -3015,8 +3018,7 @@ static int svm_set_msr(struct kvm_vcpu *vcpu, struct msr_data *msr)
 		break;
 	case MSR_IA32_DEBUGCTLMSR:
 		if (!lbrv) {
-			vcpu_unimpl(vcpu, "%s: MSR_IA32_DEBUGCTL 0x%llx, nop\n",
-				    __func__, data);
+			kvm_pr_unimpl_wrmsr(vcpu, ecx, data);
 			break;
 		}
 		if (data & DEBUGCTL_RESERVED_BITS)
@@ -3045,7 +3047,7 @@ static int svm_set_msr(struct kvm_vcpu *vcpu, struct msr_data *msr)
 	case MSR_VM_CR:
 		return svm_set_vm_cr(vcpu, data);
 	case MSR_VM_IGNNE:
-		vcpu_unimpl(vcpu, "unimplemented wrmsr: 0x%x data 0x%llx\n", ecx, data);
+		kvm_pr_unimpl_wrmsr(vcpu, ecx, data);
 		break;
 	case MSR_AMD64_DE_CFG: {
 		struct kvm_msr_entry msr_entry;
@@ -3478,7 +3480,7 @@ static void svm_inject_nmi(struct kvm_vcpu *vcpu)
 	if (svm->nmi_l1_to_l2)
 		return;
 
-	vcpu->arch.hflags |= HF_NMI_MASK;
+	svm->nmi_masked = true;
 	if (!sev_es_guest(vcpu->kvm))
 		svm_set_intercept(svm, INTERCEPT_IRET);
 	++vcpu->stat.nmi_injections;
@@ -3583,7 +3585,6 @@ bool svm_nmi_blocked(struct kvm_vcpu *vcpu)
 {
 	struct vcpu_svm *svm = to_svm(vcpu);
 	struct vmcb *vmcb = svm->vmcb;
-	bool ret;
 
 	if (!gif_set(svm))
 		return true;
@@ -3591,10 +3592,8 @@ bool svm_nmi_blocked(struct kvm_vcpu *vcpu)
 	if (is_guest_mode(vcpu) && nested_exit_on_nmi(svm))
 		return false;
 
-	ret = (vmcb->control.int_state & SVM_INTERRUPT_SHADOW_MASK) ||
-	      (vcpu->arch.hflags & HF_NMI_MASK);
-
-	return ret;
+	return (vmcb->control.int_state & SVM_INTERRUPT_SHADOW_MASK) ||
+	       svm->nmi_masked;
 }
 
 static int svm_nmi_allowed(struct kvm_vcpu *vcpu, bool for_injection)
@@ -3614,7 +3613,7 @@ static int svm_nmi_allowed(struct kvm_vcpu *vcpu, bool for_injection)
 
 static bool svm_get_nmi_mask(struct kvm_vcpu *vcpu)
 {
-	return !!(vcpu->arch.hflags & HF_NMI_MASK);
+	return to_svm(vcpu)->nmi_masked;
 }
 
 static void svm_set_nmi_mask(struct kvm_vcpu *vcpu, bool masked)
@@ -3622,11 +3621,11 @@ static void svm_set_nmi_mask(struct kvm_vcpu *vcpu, bool masked)
 	struct vcpu_svm *svm = to_svm(vcpu);
 
 	if (masked) {
-		vcpu->arch.hflags |= HF_NMI_MASK;
+		svm->nmi_masked = true;
 		if (!sev_es_guest(vcpu->kvm))
 			svm_set_intercept(svm, INTERCEPT_IRET);
 	} else {
-		vcpu->arch.hflags &= ~HF_NMI_MASK;
+		svm->nmi_masked = false;
 		if (!sev_es_guest(vcpu->kvm))
 			svm_clr_intercept(svm, INTERCEPT_IRET);
 	}
@@ -3712,7 +3711,7 @@ static void svm_enable_nmi_window(struct kvm_vcpu *vcpu)
 {
 	struct vcpu_svm *svm = to_svm(vcpu);
 
-	if ((vcpu->arch.hflags & (HF_NMI_MASK | HF_IRET_MASK)) == HF_NMI_MASK)
+	if (svm->nmi_masked && !svm->awaiting_iret_completion)
 		return; /* IRET will cause a vm exit */
 
 	if (!gif_set(svm)) {
@@ -3836,10 +3835,11 @@ static void svm_complete_interrupts(struct kvm_vcpu *vcpu)
 	 * If we've made progress since setting HF_IRET_MASK, we've
 	 * executed an IRET and can allow NMI injection.
 	 */
-	if ((vcpu->arch.hflags & HF_IRET_MASK) &&
+	if (svm->awaiting_iret_completion &&
 	    (sev_es_guest(vcpu->kvm) ||
 	     kvm_rip_read(vcpu) != svm->nmi_iret_rip)) {
-		vcpu->arch.hflags &= ~(HF_NMI_MASK | HF_IRET_MASK);
+		svm->awaiting_iret_completion = false;
+		svm->nmi_masked = false;
 		kvm_make_request(KVM_REQ_EVENT, vcpu);
 	}
 
@@ -5020,7 +5020,7 @@ static __init int svm_hardware_setup(void)
 			nrips = false;
 	}
 
-	enable_apicv = avic = avic && avic_hardware_setup(&svm_x86_ops);
+	enable_apicv = avic = avic && avic_hardware_setup();
 
 	if (!enable_apicv) {
 		svm_x86_ops.vcpu_blocking = NULL;
