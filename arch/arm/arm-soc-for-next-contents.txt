@@ -52,6 +52,8 @@ soc/drivers
 		contains samsung/bindings
 	apple/rtkit-pmgr
 		https://github.com/AsahiLinux/linux tags/asahi-soc-rtkit-pmgr-6.3
+	patch
+		memory: renesas-rpc-if: Remove redundant division of dummy
 
 arm/defconfig
 
@@ -241,6 +243,20 @@ arm/dt
 		https://git.kernel.org/pub/scm/linux/kernel/git/ti/linux tags/ti-k3-dt-for-v6.3
 	socfpga/dt
 		git://git.kernel.org/pub/scm/linux/kernel/git/dinguyen/linux tags/socfpga_dts_updates_for_v6.3
+	aspeed/dt
+		git://git.kernel.org/pub/scm/linux/kernel/git/joel/bmc tags/aspeed-6.3-devicetree
+	patch
+		ARM: dts: uniphier: Align node names for SoC-dependent controller and PHYs with bindings
+		ARM: dts: uniphier: Add missing reg properties for glue layer
+		ARM: dts: uniphier: Add syscon compatible string to soc-glue-debug
+		ARM: dts: uniphier: Add syscon-uhs-mode to SD node
+		arm64: dts: uniphier: Align node names for SoC-dependent controller and PHYs with bindings
+		arm64: dts: uniphier: Add missing reg properties for glue layer nodes
+		arm64: dts: uniphier: Add syscon compatible string to soc-glue-debug
+		arm64: dts: uniphier: Add syscon-uhs-mode to SD node
+		arm64: dts: uniphier: Fix property name in PXs3 USB node
+	at91/dt-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/at91/linux tags/at91-dt-6.3-2
 
 soc/defconfig
 	patch
