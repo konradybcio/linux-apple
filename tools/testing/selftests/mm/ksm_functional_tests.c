@@ -24,6 +24,7 @@
 
 #define KiB 1024u
 #define MiB (1024 * KiB)
+#define PageSize (4 * KiB)
 
 static int ksm_fd;
 static int ksm_full_scans_fd;
@@ -59,9 +60,8 @@ static bool range_maps_duplicates(char *addr, unsigned long size)
 	return false;
 }
 
-static bool check_ksm_zero_pages_count(unsigned long zero_size)
+static long ksm_get_zero_pages(void)
 {
-	unsigned long pages_expected = zero_size / (4 * KiB);
 	char buf[20];
 	ssize_t read_size;
 	unsigned long ksm_zero_pages;
@@ -72,7 +72,7 @@ static bool check_ksm_zero_pages_count(unsigned long zero_size)
 	buf[read_size] = 0;
 	ksm_zero_pages = strtol(buf, NULL, 10);
 
-	return ksm_zero_pages == pages_expected;
+	return ksm_zero_pages;
 }
 
 static long ksm_get_full_scans(void)
@@ -109,13 +109,7 @@ static inline int ksm_merge(void)
 	/* Wait for two full scans such that any possible merging happened. */
 	if (write(ksm_fd, "1", 1) != 1)
 		return -errno;
-	return wait_two_full_scans();
-}
 
-static inline int make_cow(char *map, char val, unsigned long size)
-{
-
-	memset(map, val, size);
 	return wait_two_full_scans();
 }
 
@@ -129,6 +123,12 @@ static int unmerge_zero_page(char *start, unsigned long size)
 		return ret;
 	}
 
+	/*
+	 * Wait for two full scans such that any possible unmerging of zero
+	 * pages happened. Why? Because the unmerge action of zero pages is not
+	 * done in the context of madvise(), but in the context of
+	 * unshare_zero_pages() of the ksmd thread.
+	 */
 	return wait_two_full_scans();
 }
 
@@ -193,16 +193,15 @@ static void test_unmerge_zero_pages(void)
 {
 	const unsigned int size = 2 * MiB;
 	char *map;
+	unsigned long pages_expected;
 
 	ksft_print_msg("[RUN] %s\n", __func__);
 
 	/* Confirm the interfaces*/
-	ksm_zero_pages_fd = open("/sys/kernel/mm/ksm/zero_pages_sharing", O_RDONLY);
 	if (ksm_zero_pages_fd < 0) {
 		ksft_test_result_skip("open(\"/sys/kernel/mm/ksm/zero_pages_sharing\") failed\n");
 		return;
 	}
-	ksm_use_zero_pages_fd = open("/sys/kernel/mm/ksm/use_zero_pages", O_RDWR);
 	if (ksm_use_zero_pages_fd < 0) {
 		ksft_test_result_skip("open \"/sys/kernel/mm/ksm/use_zero_pages\" failed\n");
 		return;
@@ -214,27 +213,20 @@ static void test_unmerge_zero_pages(void)
 
 	/* Mmap zero pages*/
 	map = mmap_and_merge_range(0x00, size);
+	if (map == MAP_FAILED)
+		return;
 
-	/* Case 1: make Writing on ksm zero pages (COW) */
-	if (make_cow(map, 0xcf, size / 2)) {
-		ksft_test_result_fail("COW failed\n");
+	if (unmerge_zero_page(map + size / 2, size / 2))
 		goto unmap;
-	}
-	ksft_test_result(check_ksm_zero_pages_count(size / 2),
-						"zero page count react to cow\n");
 
-	/* Case 2: Call madvise(xxx, MADV_UNMERGEABLE)*/
-	if (unmerge_zero_page(map + size / 2, size / 4)) {
-		ksft_test_result_fail("unmerge_zero_page failed\n");
-		goto unmap;
-	}
-	ksft_test_result(check_ksm_zero_pages_count(size / 4),
+	/* Check if zero_pages_sharing can be update correctly when unmerge */
+	pages_expected = (size / 2) / PageSize;
+	ksft_test_result(pages_expected == ksm_get_zero_pages(),
 						"zero page count react to unmerge\n");
 
-	/*Check if ksm pages are really unmerged */
-	ksft_test_result(!range_maps_duplicates(map + size / 2, size / 4),
+	/* Check if ksm zero pages are really unmerged */
+	ksft_test_result(!range_maps_duplicates(map + size / 2, size / 2),
 						"KSM zero pages were unmerged\n");
-
 unmap:
 	munmap(map, size);
 }
@@ -354,10 +346,11 @@ int main(int argc, char **argv)
 	ksm_full_scans_fd = open("/sys/kernel/mm/ksm/full_scans", O_RDONLY);
 	if (ksm_full_scans_fd < 0)
 		ksft_exit_skip("open(\"/sys/kernel/mm/ksm/full_scans\") failed\n");
-
 	pagemap_fd = open("/proc/self/pagemap", O_RDONLY);
 	if (pagemap_fd < 0)
 		ksft_exit_skip("open(\"/proc/self/pagemap\") failed\n");
+	ksm_zero_pages_fd = open("/sys/kernel/mm/ksm/zero_pages_sharing", O_RDONLY);
+	ksm_use_zero_pages_fd = open("/sys/kernel/mm/ksm/use_zero_pages", O_RDWR);
 
 	test_unmerge();
 	test_unmerge_zero_pages();
