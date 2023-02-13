@@ -24,7 +24,7 @@ soc/dt
 soc/drivers
 	renesas/drivers
 		git://git.kernel.org/pub/scm/linux/kernel/git/geert/renesas-devel tags/renesas-drivers-for-v6.3-tag1
-	<no branch> (32a55bbdd74e2bb76a76979bc4f37e7e7ebe620d)
+	drivers/scmi
 		git://git.kernel.org/pub/scm/linux/kernel/git/sudeep.holla/linux tags/scmi-updates-6.3
 	drivers/memory
 		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux-mem-ctrl tags/memory-controller-drv-6.3-2
@@ -54,6 +54,11 @@ soc/drivers
 		https://github.com/AsahiLinux/linux tags/asahi-soc-rtkit-pmgr-6.3
 	patch
 		memory: renesas-rpc-if: Remove redundant division of dummy
+		soc: sunxi: SUN20I_PPU should depend on PM
+	qcom/drivers
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-drivers-for-6.3
+	qcom/drivers-3
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-drivers-for-6.3-2
 
 arm/defconfig
 
@@ -66,6 +71,8 @@ arm/fixes
 		arm64: dts: mediatek: mt8195: Fix vdosys* compatible strings
 	sti/dt-fixes
 		git://git.kernel.org/pub/scm/linux/kernel/git/pchotard/sti tags/sti-dt-for-6.3-round1
+	<no branch> (66e45351f7d6798751f98001d1fcd572024d87f0)
+		https://git.kernel.org/pub/scm/linux/kernel/git/amlogic/linux tags/amlogic-fixes-v6.2-rc-take2
 
 arm/boardfile-remove
 	patch
@@ -159,6 +166,7 @@ arm/boardfile-remove
 		ARM: debug: remove references in DEBUG_UART_8250_SHIFT to removed configs
 		usb: ohci-omap: avoid unused-variable warning
 		ARM: pxa: restore mfp-pxa320.h
+		mmc: omap: drop TPS65010 dependency
 
 arm/dt
 	renesas/dt
@@ -257,6 +265,12 @@ arm/dt
 		arm64: dts: uniphier: Fix property name in PXs3 USB node
 	at91/dt-2
 		https://git.kernel.org/pub/scm/linux/kernel/git/at91/linux tags/at91-dt-6.3-2
+	samsung/dt-3
+		https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux tags/samsung-dt-6.3-2
+	qcom/dt-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-dts-for-6.3-2
+	qcom/dt64-2
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-for-6.3-2
 
 soc/defconfig
 	patch
@@ -282,4 +296,8 @@ soc/defconfig
 	patch
 		ARM: configs: multi_v7: enable NVMEM driver for STM32
 		ARM: defconfig: Add IOSCHED_BFQ to the default configs
+		arm64: reorder defconfig
+		ARM: reorder defconfig files
+	qcom/defconfig
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-defconfig-for-6.3-2
 
