@@ -855,7 +855,8 @@ unsigned long ntfs_names_hash(const u16 *name, size_t len, const u16 *upcase,
 
 /* globals from xattr.c */
 #ifdef CONFIG_NTFS3_FS_POSIX_ACL
-struct posix_acl *ntfs_get_acl(struct inode *inode, int type, bool rcu);
+struct posix_acl *ntfs_get_acl(struct user_namespace *mnt_userns,
+		 struct dentry *dentry, int type);
 int ntfs_set_acl(struct user_namespace *mnt_userns, struct dentry *dentry,
 		 struct posix_acl *acl, int type);
 int ntfs_init_acl(struct user_namespace *mnt_userns, struct inode *inode,
