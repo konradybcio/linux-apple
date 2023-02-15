@@ -59,6 +59,10 @@ soc/drivers
 		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-drivers-for-6.3
 	qcom/drivers-3
 		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-drivers-for-6.3-2
+	patch
+		soc: apple: rtkit: Do not copy the reg state structure to the stack
+	qcom/drivers-4
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-drivers-for-6.3-3
 
 arm/defconfig
 
@@ -271,6 +275,8 @@ arm/dt
 		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-dts-for-6.3-2
 	qcom/dt64-2
 		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-for-6.3-2
+	qcom/dt-3
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-for-6.3-3
 
 soc/defconfig
 	patch
@@ -300,4 +306,10 @@ soc/defconfig
 		ARM: reorder defconfig files
 	qcom/defconfig
 		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-defconfig-for-6.3-2
+	patch
+		scripts: merge_config: Add option to suppress warning on overrides
+		kbuild: Provide a version of merge_into_defconfig without override warnings
+		arm64: configs: Add virtconfig
+	qcom/defconfig-3
+		https://git.kernel.org/pub/scm/linux/kernel/git/qcom/linux tags/qcom-arm64-defconfig-for-6.3-3
 
