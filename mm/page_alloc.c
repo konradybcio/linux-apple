@@ -953,9 +953,8 @@ void __init init_mem_debugging_and_hardening(void)
 	 * of struct pages being allocated or freed. With CONFIG_DEBUG_VM it's
 	 * enabled already.
 	 */
-	if (!IS_ENABLED(CONFIG_DEBUG_VM) && want_check_pages) {
+	if (!IS_ENABLED(CONFIG_DEBUG_VM) && want_check_pages)
 		static_branch_enable(&check_pages_enabled);
-	}
 }
 
 static inline void set_buddy_order(struct page *page, unsigned int order)
