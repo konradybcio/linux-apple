@@ -717,7 +717,7 @@ long uffd_wp_range(struct mm_struct *dst_mm, struct vm_area_struct *dst_vma,
 	struct mmu_gather tlb;
 	long ret;
 
-	VM_WARN_ON_ONCE(start < dst_vma->vm_start || start + len > dst_vma->vm_end,
+	VM_WARN_ONCE(start < dst_vma->vm_start || start + len > dst_vma->vm_end,
 			"The address range exceeds VMA boundary.\n");
 	if (enable_wp)
 		mm_cp_flags = MM_CP_UFFD_WP;
