@@ -1815,6 +1815,7 @@ static void migrate_zspage(struct zs_pool *pool, struct size_class *class,
 		obj_idx++;
 		record_obj(handle, free_obj);
 		obj_free(class->size, used_obj, NULL);
+		atomic_long_inc(&pool->stats.objs_moved);
 	}
 
 	/* Remember last position in this iteration */
