@@ -40,6 +40,9 @@
 #include <linux/fs_parser.h>
 #include <linux/swapfile.h>
 #include <linux/iversion.h>
+#include <linux/mm_inline.h>
+#include <linux/fadvise.h>
+#include <linux/page_idle.h>
 #include "swap.h"
 
 static struct vfsmount *shm_mnt;
@@ -2344,6 +2347,118 @@ static void shmem_set_inode_flags(struct inode *inode, unsigned int fsflags)
 #define shmem_initxattrs NULL
 #endif
 
+static void shmem_isolate_pages_range(struct address_space *mapping, loff_t start,
+				loff_t end, struct list_head *list)
+{
+	XA_STATE(xas, &mapping->i_pages, start);
+	struct folio *folio;
+
+	rcu_read_lock();
+	xas_for_each(&xas, folio, end) {
+		if (xas_retry(&xas, folio))
+			continue;
+		if (xa_is_value(folio))
+			continue;
+
+		if (!folio_try_get(folio))
+			continue;
+		if (folio_test_unevictable(folio) || folio_mapped(folio) ||
+				folio_isolate_lru(folio)) {
+			folio_put(folio);
+			continue;
+		}
+		folio_put(folio);
+
+		/*
+		 * Prepare the folios to be passed to reclaim_pages().
+		 * VM can't reclaim a folio unless young bit is
+		 * cleared in its flags.
+		 */
+		folio_clear_referenced(folio);
+		folio_test_clear_young(folio);
+		list_add(&folio->lru, list);
+		if (need_resched()) {
+			xas_pause(&xas);
+			cond_resched_rcu();
+		}
+	}
+	rcu_read_unlock();
+}
+
+static int shmem_fadvise_dontneed(struct address_space *mapping, loff_t start,
+				loff_t end)
+{
+	LIST_HEAD(folio_list);
+
+	if (!total_swap_pages || mapping_unevictable(mapping))
+		return 0;
+
+	lru_add_drain();
+	shmem_isolate_pages_range(mapping, start, end, &folio_list);
+	reclaim_pages(&folio_list);
+
+	return 0;
+}
+
+static int shmem_fadvise_willneed(struct address_space *mapping,
+				 pgoff_t start, pgoff_t long end)
+{
+	struct folio *folio;
+	pgoff_t index;
+
+	xa_for_each_range(&mapping->i_pages, index, folio, start, end) {
+		if (!xa_is_value(folio))
+			continue;
+		folio = shmem_read_folio(mapping, index);
+		if (!IS_ERR(folio))
+			folio_put(folio);
+	}
+
+	return 0;
+}
+
+static int shmem_fadvise(struct file *file, loff_t offset, loff_t len, int advice)
+{
+	loff_t endbyte;
+	pgoff_t start_index;
+	pgoff_t end_index;
+	struct address_space *mapping;
+	struct inode *inode = file_inode(file);
+	int ret = 0;
+
+	if (S_ISFIFO(inode->i_mode))
+		return -ESPIPE;
+
+	mapping = file->f_mapping;
+	if (!mapping || len < 0 || !shmem_mapping(mapping))
+		return -EINVAL;
+
+	endbyte = fadvise_calc_endbyte(offset, len);
+
+	start_index = offset >> PAGE_SHIFT;
+	end_index   = endbyte >> PAGE_SHIFT;
+	switch (advice) {
+	case POSIX_FADV_DONTNEED:
+		ret = shmem_fadvise_dontneed(mapping, start_index, end_index);
+		break;
+	case POSIX_FADV_WILLNEED:
+		ret = shmem_fadvise_willneed(mapping, start_index, end_index);
+		break;
+	case POSIX_FADV_NORMAL:
+	case POSIX_FADV_RANDOM:
+	case POSIX_FADV_SEQUENTIAL:
+	case POSIX_FADV_NOREUSE:
+		/*
+		 * No bad return value, but ignore advice.
+		 */
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return ret;
+}
+
 static struct inode *shmem_get_inode(struct mnt_idmap *idmap, struct super_block *sb,
 				     struct inode *dir, umode_t mode, dev_t dev,
 				     unsigned long flags)
@@ -3942,6 +4057,7 @@ static const struct file_operations shmem_file_operations = {
 	.splice_write	= iter_file_splice_write,
 	.fallocate	= shmem_fallocate,
 #endif
+	.fadvise	= shmem_fadvise,
 };
 
 static const struct inode_operations shmem_inode_operations = {

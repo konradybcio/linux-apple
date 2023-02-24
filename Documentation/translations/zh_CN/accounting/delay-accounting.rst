@@ -92,17 +92,17 @@ getdelays命令的一般格式::
 	CPU             count     real total  virtual total    delay total  delay average
 	                    8        7000000        6872122        3382277          0.423ms
 	IO              count    delay total  delay average
-	                    0              0              0ms
+	                    0              0              0.000ms
 	SWAP            count    delay total  delay average
-	                    0              0              0ms
+	                    0              0              0.000ms
 	RECLAIM         count    delay total  delay average
-	                    0              0              0ms
+	                    0              0              0.000ms
 	THRASHING       count    delay total  delay average
-	                    0              0              0ms
+	                    0              0              0.000ms
 	COMPACT         count    delay total  delay average
-	                    0              0              0ms
-    WPCOPY          count    delay total  delay average
-                       0              0              0ms
+	                    0              0              0.000ms
+	WPCOPY          count    delay total  delay average
+	                    0              0              0.000ms
 
 获取pid为1的IO计数，它只和-p一起使用::
 	# ./getdelays -i -p 1
