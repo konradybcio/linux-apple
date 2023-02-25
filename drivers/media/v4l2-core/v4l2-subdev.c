@@ -200,6 +200,9 @@ static inline int check_format(struct v4l2_subdev *sd,
 	if (!format)
 		return -EINVAL;
 
+	if (!(sd->flags & V4L2_SUBDEV_FL_STREAMS))
+		format->stream = 0;
+
 	return check_which(format->which) ? : check_pad(sd, format->pad) ? :
 	       check_state(sd, state, format->which, format->pad, format->stream);
 }
@@ -227,6 +230,9 @@ static int call_enum_mbus_code(struct v4l2_subdev *sd,
 	if (!code)
 		return -EINVAL;
 
+	if (!(sd->flags & V4L2_SUBDEV_FL_STREAMS))
+		code->stream = 0;
+
 	return check_which(code->which) ? : check_pad(sd, code->pad) ? :
 	       check_state(sd, state, code->which, code->pad, code->stream) ? :
 	       sd->ops->pad->enum_mbus_code(sd, state, code);
@@ -238,6 +244,9 @@ static int call_enum_frame_size(struct v4l2_subdev *sd,
 {
 	if (!fse)
 		return -EINVAL;
+
+	if (!(sd->flags & V4L2_SUBDEV_FL_STREAMS))
+		fse->stream = 0;
 
 	return check_which(fse->which) ? : check_pad(sd, fse->pad) ? :
 	       check_state(sd, state, fse->which, fse->pad, fse->stream) ? :
@@ -274,6 +283,9 @@ static int call_enum_frame_interval(struct v4l2_subdev *sd,
 	if (!fie)
 		return -EINVAL;
 
+	if (!(sd->flags & V4L2_SUBDEV_FL_STREAMS))
+		fie->stream = 0;
+
 	return check_which(fie->which) ? : check_pad(sd, fie->pad) ? :
 	       check_state(sd, state, fie->which, fie->pad, fie->stream) ? :
 	       sd->ops->pad->enum_frame_interval(sd, state, fie);
@@ -285,6 +297,9 @@ static inline int check_selection(struct v4l2_subdev *sd,
 {
 	if (!sel)
 		return -EINVAL;
+
+	if (!(sd->flags & V4L2_SUBDEV_FL_STREAMS))
+		sel->stream = 0;
 
 	return check_which(sel->which) ? : check_pad(sd, sel->pad) ? :
 	       check_state(sd, state, sel->which, sel->pad, sel->stream);
