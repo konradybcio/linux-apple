@@ -148,7 +148,7 @@ apply_relocate_add(Elf64_Shdr *sechdrs, const char *strtab,
 
 	/* The small sections were sorted to the end of the segment.
 	   The following should definitely cover them.  */
-	gp = (u64)me->core_layout.base + me->core_layout.size - 0x8000;
+	gp = (u64)me->mem[MOD_DATA].base + me->mem[MOD_DATA].size - 0x8000;
 	got = sechdrs[me->arch.gotsecindex].sh_addr;
 
 	for (i = 0; i < n; i++) {
