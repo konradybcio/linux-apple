@@ -116,6 +116,19 @@ static int verify_dirent_name(const char *name, int len)
 	return 0;
 }
 
+static void warn_32bit_access(void)
+{
+#ifdef CONFIG_COMPAT_WARN_32BIT_FILESYSTEM_ACCESS
+	if (sizeof(compat_ulong_t) >= sizeof(loff_t))
+		return;
+
+	printk_ratelimited(KERN_WARNING "%s(%d): Recompile this 32-bit "
+		"application with '-D_FILE_OFFSET_BITS=64 "
+		"-D_LARGEFILE_SOURCE' or '-D_GNU_SOURCE'\n",
+		current->comm, task_pid_nr(current));
+#endif
+}
+
 /*
  * Traditional linux readdir() handling..
  *
@@ -195,6 +208,7 @@ SYSCALL_DEFINE3(old_readdir, unsigned int, fd,
 		error = buf.result;
 
 	fdput_pos(f);
+	warn_32bit_access();
 	return error;
 }
 
@@ -294,6 +308,8 @@ SYSCALL_DEFINE3(getdents, unsigned int, fd,
 			error = -EFAULT;
 		else
 			error = count - buf.count;
+	} else {
+		warn_32bit_access();
 	}
 	fdput_pos(f);
 	return error;
@@ -545,6 +561,8 @@ COMPAT_SYSCALL_DEFINE3(getdents, unsigned int, fd,
 			error = -EFAULT;
 		else
 			error = count - buf.count;
+	} else {
+		warn_32bit_access();
 	}
 	fdput_pos(f);
 	return error;

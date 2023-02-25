@@ -1153,6 +1153,16 @@ config COMPAT_32BIT_TIME
 	  This is relevant on all 32-bit architectures, and 64-bit architectures
 	  as part of compat syscall handling.
 
+config COMPAT_WARN_32BIT_FILESYSTEM_ACCESS
+	bool "Warn on usage of 32-bit filesystem system calls"
+	default !64BIT || COMPAT
+	help
+	  Issue a warning in kernel syslog if a 32-bit userspace application
+	  calls the 32-bit getdents() syscall. Enabling this option helps to
+	  find programs which will silently break on larger filesystems.
+	  Disable this option only if you know your machine will never access
+	  filesystems above 4GB of size (embedded devices).
+
 config ARCH_NO_PREEMPT
 	bool
 

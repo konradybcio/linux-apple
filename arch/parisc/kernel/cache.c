@@ -317,6 +317,7 @@ __flush_cache_page(struct vm_area_struct *vma, unsigned long vmaddr,
 {
 	if (!static_branch_likely(&parisc_has_cache))
 		return;
+	PA_CHECK_PAGE_ALIGNED(vmaddr);
 	preempt_disable();
 	flush_dcache_page_asm(physaddr, vmaddr);
 	if (vma->vm_flags & VM_EXEC)
@@ -550,6 +551,7 @@ void flush_kernel_dcache_page_addr(const void *addr)
 {
 	unsigned long flags;
 
+	PA_CHECK_PAGE_ALIGNED(addr);
 	flush_kernel_dcache_page_asm(addr);
 	purge_tlb_start(flags);
 	pdtlb(SR_KERNEL, addr);
@@ -567,8 +569,10 @@ static void flush_cache_page_if_present(struct vm_area_struct *vma,
 	 * a non-access TLB miss. Hopefully, the page has already been
 	 * flushed.
 	 */
-	if (ptep && pte_needs_flush(*ptep))
+	if (ptep && pte_needs_flush(*ptep)) {
+		PA_CHECK_PAGE_ALIGNED(vmaddr);
 		flush_cache_page(vma, vmaddr, pfn);
+	}
 }
 
 void copy_user_highpage(struct page *to, struct page *from,
@@ -712,6 +716,7 @@ void flush_cache_page(struct vm_area_struct *vma, unsigned long vmaddr, unsigned
 {
 	if (WARN_ON(!pfn_valid(pfn)))
 		return;
+	PA_CHECK_PAGE_ALIGNED(vmaddr);
 	if (parisc_requires_coherency())
 		flush_user_cache_page(vma, vmaddr);
 	else

@@ -15,6 +15,9 @@ DECLARE_STATIC_KEY_TRUE(parisc_has_cache);
 DECLARE_STATIC_KEY_TRUE(parisc_has_dcache);
 DECLARE_STATIC_KEY_TRUE(parisc_has_icache);
 
+#define PA_CHECK_PAGE_ALIGNED(addr) \
+	WARN_ON_ONCE((unsigned long)addr & ~PAGE_MASK)
+
 #define flush_cache_dup_mm(mm) flush_cache_mm(mm)
 
 void flush_user_icache_range_asm(unsigned long, unsigned long);
