@@ -679,6 +679,7 @@ static int gaudi_set_fixed_properties(struct hl_device *hdev)
 			(num_sync_stream_queues * HL_RSVD_MONS);
 
 	prop->first_available_user_interrupt = USHRT_MAX;
+	prop->tpc_interrupt_id = USHRT_MAX;
 
 	for (i = 0 ; i < HL_MAX_DCORES ; i++)
 		prop->first_available_cq[i] = USHRT_MAX;
@@ -4068,7 +4069,7 @@ disable_queues:
 	return rc;
 }
 
-static void gaudi_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset)
+static int gaudi_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset)
 {
 	struct cpu_dyn_regs *dyn_regs =
 			&hdev->fw_loader.dynamic_loader.comm_desc.cpu_dyn_regs;
@@ -4078,7 +4079,7 @@ static void gaudi_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset
 
 	if (!hard_reset) {
 		dev_err(hdev->dev, "GAUDI doesn't support soft-reset\n");
-		return;
+		return 0;
 	}
 
 	if (hdev->pldm) {
@@ -4215,6 +4216,7 @@ skip_reset:
 
 		hdev->device_cpu_is_halted = false;
 	}
+	return 0;
 }
 
 static int gaudi_suspend(struct hl_device *hdev)
@@ -7297,7 +7299,7 @@ static void gaudi_handle_qman_err(struct hl_device *hdev, u16 event_type, u64 *e
 }
 
 static void gaudi_print_irq_info(struct hl_device *hdev, u16 event_type,
-					bool razwi, u64 *event_mask)
+					bool check_razwi, u64 *event_mask)
 {
 	bool is_read = false, is_write = false;
 	u16 engine_id[2], num_of_razwi_eng = 0;
@@ -7316,7 +7318,7 @@ static void gaudi_print_irq_info(struct hl_device *hdev, u16 event_type,
 	dev_err_ratelimited(hdev->dev, "Received H/W interrupt %d [\"%s\"]\n",
 		event_type, desc);
 
-	if (razwi) {
+	if (check_razwi) {
 		gaudi_print_and_get_razwi_info(hdev, &engine_id[0], &engine_id[1], &is_read,
 						&is_write);
 		gaudi_print_and_get_mmu_error_info(hdev, &razwi_addr, event_mask);
@@ -7333,8 +7335,9 @@ static void gaudi_print_irq_info(struct hl_device *hdev, u16 event_type,
 				num_of_razwi_eng = 1;
 		}
 
-		hl_handle_razwi(hdev, razwi_addr, engine_id, num_of_razwi_eng, razwi_flags,
-				event_mask);
+		if (razwi_flags)
+			hl_handle_razwi(hdev, razwi_addr, engine_id, num_of_razwi_eng,
+					razwi_flags, event_mask);
 	}
 }
 
@@ -7633,6 +7636,7 @@ static void gaudi_print_clk_change_info(struct hl_device *hdev, u16 event_type, 
 static void gaudi_handle_eqe(struct hl_device *hdev, struct hl_eq_entry *eq_entry)
 {
 	struct gaudi_device *gaudi = hdev->asic_specific;
+	struct hl_info_fw_err_info fw_err_info;
 	u64 data = le64_to_cpu(eq_entry->data[0]), event_mask = 0;
 	u32 ctl = le32_to_cpu(eq_entry->hdr.ctl);
 	u32 fw_fatal_err_flag = 0, flags = 0;
@@ -7911,7 +7915,10 @@ static void gaudi_handle_eqe(struct hl_device *hdev, struct hl_eq_entry *eq_entr
 	case GAUDI_EVENT_FW_ALIVE_S:
 		gaudi_print_irq_info(hdev, event_type, false, &event_mask);
 		gaudi_print_fw_alive_info(hdev, &eq_entry->fw_alive);
-		event_mask |= HL_NOTIFIER_EVENT_GENERAL_HW_ERR;
+		fw_err_info.err_type = HL_INFO_FW_REPORTED_ERR;
+		fw_err_info.event_id = event_type;
+		fw_err_info.event_mask = &event_mask;
+		hl_handle_fw_err(hdev, &fw_err_info);
 		goto reset_device;
 
 	default:
@@ -7942,6 +7949,10 @@ reset_device:
 	}
 
 	if (reset_required) {
+		/* escalate general hw errors to critical/fatal error */
+		if (event_mask & HL_NOTIFIER_EVENT_GENERAL_HW_ERR)
+			hl_handle_critical_hw_err(hdev, event_type, &event_mask);
+
 		hl_device_cond_reset(hdev, flags, event_mask);
 	} else {
 		hl_fw_unmask_irq(hdev, event_type);

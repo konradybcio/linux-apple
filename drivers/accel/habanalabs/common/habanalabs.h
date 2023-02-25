@@ -155,17 +155,11 @@ enum hl_mmu_enablement {
 #define hl_asic_dma_alloc_coherent(hdev, size, dma_handle, flags) \
 	hl_asic_dma_alloc_coherent_caller(hdev, size, dma_handle, flags, __func__)
 
-#define hl_cpu_accessible_dma_pool_alloc(hdev, size, dma_handle) \
-	hl_cpu_accessible_dma_pool_alloc_caller(hdev, size, dma_handle, __func__)
-
 #define hl_asic_dma_pool_zalloc(hdev, size, mem_flags, dma_handle) \
 	hl_asic_dma_pool_zalloc_caller(hdev, size, mem_flags, dma_handle, __func__)
 
 #define hl_asic_dma_free_coherent(hdev, size, cpu_addr, dma_handle) \
 	hl_asic_dma_free_coherent_caller(hdev, size, cpu_addr, dma_handle, __func__)
-
-#define hl_cpu_accessible_dma_pool_free(hdev, size, vaddr) \
-	hl_cpu_accessible_dma_pool_free_caller(hdev, size, vaddr, __func__)
 
 #define hl_asic_dma_pool_free(hdev, vaddr, dma_addr) \
 	hl_asic_dma_pool_free_caller(hdev, vaddr, dma_addr, __func__)
@@ -592,6 +586,8 @@ struct hl_hints_range {
  * @host_base_address: host physical start address for host DMA from device
  * @host_end_address: host physical end address for host DMA from device
  * @max_freq_value: current max clk frequency.
+ * @engine_core_interrupt_reg_addr: interrupt register address for engine core to use
+ *                                  in order to raise events toward FW.
  * @clk_pll_index: clock PLL index that specify which PLL determines the clock
  *                 we display to the user
  * @mmu_pgt_size: MMU page tables total size.
@@ -663,6 +659,7 @@ struct hl_hints_range {
  * @first_available_cq: first available CQ for the user.
  * @user_interrupt_count: number of user interrupts.
  * @user_dec_intr_count: number of decoder interrupts exposed to user.
+ * @tpc_interrupt_id: interrupt id for TPC to use in order to raise events towards the host.
  * @cache_line_size: device cache line size.
  * @server_type: Server type that the ASIC is currently installed in.
  *               The value is according to enum hl_server_type in uapi file.
@@ -739,6 +736,7 @@ struct asic_fixed_properties {
 	u64				host_base_address;
 	u64				host_end_address;
 	u64				max_freq_value;
+	u64				engine_core_interrupt_reg_addr;
 	u32				clk_pll_index;
 	u32				mmu_pgt_size;
 	u32				mmu_pte_size;
@@ -788,6 +786,7 @@ struct asic_fixed_properties {
 	u16				first_available_cq[HL_MAX_DCORES];
 	u16				user_interrupt_count;
 	u16				user_dec_intr_count;
+	u16				tpc_interrupt_id;
 	u16				cache_line_size;
 	u16				server_type;
 	u8				completion_queues_count;
@@ -1096,6 +1095,7 @@ struct hl_cq {
 enum hl_user_interrupt_type {
 	HL_USR_INTERRUPT_CQ = 0,
 	HL_USR_INTERRUPT_DECODER,
+	HL_USR_INTERRUPT_TPC
 };
 
 /**
@@ -1104,6 +1104,7 @@ enum hl_user_interrupt_type {
  * @type: user interrupt type
  * @wait_list_head: head to the list of user threads pending on this interrupt
  * @wait_list_lock: protects wait_list_head
+ * @timestamp: last timestamp taken upon interrupt
  * @interrupt_id: msix interrupt id
  */
 struct hl_user_interrupt {
@@ -1111,6 +1112,7 @@ struct hl_user_interrupt {
 	enum hl_user_interrupt_type	type;
 	struct list_head		wait_list_head;
 	spinlock_t			wait_list_lock;
+	ktime_t				timestamp;
 	u32				interrupt_id;
 };
 
@@ -1574,7 +1576,7 @@ struct hl_asic_funcs {
 	int (*sw_init)(struct hl_device *hdev);
 	int (*sw_fini)(struct hl_device *hdev);
 	int (*hw_init)(struct hl_device *hdev);
-	void (*hw_fini)(struct hl_device *hdev, bool hard_reset, bool fw_reset);
+	int (*hw_fini)(struct hl_device *hdev, bool hard_reset, bool fw_reset);
 	void (*halt_engines)(struct hl_device *hdev, bool hard_reset, bool fw_reset);
 	int (*suspend)(struct hl_device *hdev);
 	int (*resume)(struct hl_device *hdev);
@@ -3032,17 +3034,55 @@ struct razwi_info {
 };
 
 /**
+ * struct hw_err_info - HW error information.
+ * @event: holds information on the event.
+ * @event_detected: if set as 1, then a HW event was discovered for the
+ *                  first time after the driver has finished booting-up.
+ *                  currently we assume that only fatal events (that require hard-reset) are
+ *                  reported so we don't care of the others that might follow it.
+ *                  so once changed to 1, it will remain that way.
+ *                  TODO: support multiple events.
+ * @event_info_available: indicates that a HW event info is now available.
+ */
+struct hw_err_info {
+	struct hl_info_hw_err_event	event;
+	atomic_t			event_detected;
+	bool				event_info_available;
+};
+
+/**
+ * struct fw_err_info - FW error information.
+ * @event: holds information on the event.
+ * @event_detected: if set as 1, then a FW event was discovered for the
+ *                  first time after the driver has finished booting-up.
+ *                  currently we assume that only fatal events (that require hard-reset) are
+ *                  reported so we don't care of the others that might follow it.
+ *                  so once changed to 1, it will remain that way.
+ *                  TODO: support multiple events.
+ * @event_info_available: indicates that a HW event info is now available.
+ */
+struct fw_err_info {
+	struct hl_info_fw_err_event	event;
+	atomic_t			event_detected;
+	bool				event_info_available;
+};
+
+/**
  * struct hl_error_info - holds information collected during an error.
  * @cs_timeout: CS timeout error information.
  * @razwi_info: RAZWI information.
  * @undef_opcode: undefined opcode information.
  * @page_fault_info: page fault information.
+ * @hw_err: (fatal) hardware error information.
+ * @fw_err: firmware error information.
  */
 struct hl_error_info {
 	struct cs_timeout_info		cs_timeout;
 	struct razwi_info		razwi_info;
 	struct undefined_opcode_info	undef_opcode;
 	struct page_fault_info		page_fault_info;
+	struct hw_err_info		hw_err;
+	struct fw_err_info		fw_err;
 };
 
 /**
@@ -3090,6 +3130,7 @@ struct hl_reset_info {
  *		   (required only for PCI address match mode)
  * @pcie_bar: array of available PCIe bars virtual addresses.
  * @rmmio: configuration area address on SRAM.
+ * @hclass: pointer to the habanalabs class.
  * @cdev: related char device.
  * @cdev_ctrl: char device for control operations only (INFO IOCTL)
  * @dev: related kernel basic device structure.
@@ -3104,6 +3145,7 @@ struct hl_reset_info {
  * @user_interrupt: array of hl_user_interrupt. upon the corresponding user
  *                  interrupt, driver will monitor the list of fences
  *                  registered to this interrupt.
+ * @tpc_interrupt: single TPC interrupt for all TPCs.
  * @common_user_cq_interrupt: common user CQ interrupt for all user CQ interrupts.
  *                         upon any user CQ interrupt, driver will monitor the
  *                         list of fences registered to this common structure.
@@ -3199,6 +3241,7 @@ struct hl_reset_info {
  *                drams are binned-out
  * @tpc_binning: contains mask of tpc engines that is received from the f/w which indicates which
  *               tpc engines are binned-out
+ * @dmabuf_export_cnt: number of dma-buf exporting.
  * @card_type: Various ASICs have several card types. This indicates the card
  *             type of the current device.
  * @major: habanalabs kernel driver major.
@@ -3253,6 +3296,8 @@ struct hl_reset_info {
  * @supports_mmu_prefetch: true if prefetch is supported, otherwise false.
  * @reset_upon_device_release: reset the device when the user closes the file descriptor of the
  *                             device.
+ * @supports_ctx_switch: true if a ctx switch is required upon first submission.
+ * @support_preboot_binning: true if we support read binning info from preboot.
  * @nic_ports_mask: Controls which NIC ports are enabled. Used only for testing.
  * @fw_components: Controls which f/w components to load to the device. There are multiple f/w
  *                 stages and sometimes we want to stop at a certain stage. Used only for testing.
@@ -3266,14 +3311,13 @@ struct hl_reset_info {
  *                         Used only for testing.
  * @heartbeat: Controls if we want to enable the heartbeat mechanism vs. the f/w, which verifies
  *             that the f/w is always alive. Used only for testing.
- * @supports_ctx_switch: true if a ctx switch is required upon first submission.
- * @support_preboot_binning: true if we support read binning info from preboot.
  */
 struct hl_device {
 	struct pci_dev			*pdev;
 	u64				pcie_bar_phys[HL_PCI_NUM_BARS];
 	void __iomem			*pcie_bar[HL_PCI_NUM_BARS];
 	void __iomem			*rmmio;
+	struct class			*hclass;
 	struct cdev			cdev;
 	struct cdev			cdev_ctrl;
 	struct device			*dev;
@@ -3286,6 +3330,7 @@ struct hl_device {
 	enum hl_asic_type		asic_type;
 	struct hl_cq			*completion_queue;
 	struct hl_user_interrupt	*user_interrupt;
+	struct hl_user_interrupt	tpc_interrupt;
 	struct hl_user_interrupt	common_user_cq_interrupt;
 	struct hl_user_interrupt	common_decoder_interrupt;
 	struct hl_cs			**shadow_cs_queue;
@@ -3369,7 +3414,7 @@ struct hl_device {
 	u64				fw_comms_poll_interval_usec;
 	u64				dram_binning;
 	u64				tpc_binning;
-
+	atomic_t			dmabuf_export_cnt;
 	enum cpucp_card_types		card_type;
 	u32				major;
 	u32				high_pll;
@@ -3412,7 +3457,7 @@ struct hl_device {
 	u8				supports_ctx_switch;
 	u8				support_preboot_binning;
 
-	/* Parameters for bring-up */
+	/* Parameters for bring-up to be upstreamed */
 	u64				nic_ports_mask;
 	u64				fw_components;
 	u8				mmu_enable;
@@ -3448,6 +3493,20 @@ struct hl_cs_encaps_sig_handle {
 	u32  q_idx;
 	u32  pre_sob_val;
 	u32  count;
+};
+
+/**
+ * struct hl_info_fw_err_info - firmware error information structure
+ * @err_type: The type of error detected (or reported).
+ * @event_mask: Pointer to the event mask to be modified with the detected error flag
+ *              (can be NULL)
+ * @event_id: The id of the event that reported the error
+ *            (applicable when err_type is HL_INFO_FW_REPORTED_ERR).
+ */
+struct hl_info_fw_err_info {
+	enum hl_info_fw_err_type err_type;
+	u64 *event_mask;
+	u16 event_id;
 };
 
 /*
@@ -3537,14 +3596,12 @@ static inline bool hl_mem_area_crosses_range(u64 address, u32 size,
 }
 
 uint64_t hl_set_dram_bar_default(struct hl_device *hdev, u64 addr);
+void *hl_cpu_accessible_dma_pool_alloc(struct hl_device *hdev, size_t size, dma_addr_t *dma_handle);
+void hl_cpu_accessible_dma_pool_free(struct hl_device *hdev, size_t size, void *vaddr);
 void *hl_asic_dma_alloc_coherent_caller(struct hl_device *hdev, size_t size, dma_addr_t *dma_handle,
 					gfp_t flag, const char *caller);
 void hl_asic_dma_free_coherent_caller(struct hl_device *hdev, size_t size, void *cpu_addr,
 					dma_addr_t dma_handle, const char *caller);
-void *hl_cpu_accessible_dma_pool_alloc_caller(struct hl_device *hdev, size_t size,
-						dma_addr_t *dma_handle, const char *caller);
-void hl_cpu_accessible_dma_pool_free_caller(struct hl_device *hdev, size_t size, void *vaddr,
-						const char *caller);
 void *hl_asic_dma_pool_zalloc_caller(struct hl_device *hdev, size_t size, gfp_t mem_flags,
 					dma_addr_t *dma_handle, const char *caller);
 void hl_asic_dma_pool_free_caller(struct hl_device *hdev, void *vaddr, dma_addr_t dma_addr,
@@ -3591,7 +3648,7 @@ irqreturn_t hl_irq_handler_cq(int irq, void *arg);
 irqreturn_t hl_irq_handler_eq(int irq, void *arg);
 irqreturn_t hl_irq_handler_dec_abnrm(int irq, void *arg);
 irqreturn_t hl_irq_handler_user_interrupt(int irq, void *arg);
-irqreturn_t hl_irq_handler_default(int irq, void *arg);
+irqreturn_t hl_irq_user_interrupt_thread_handler(int irq, void *arg);
 u32 hl_cq_inc_ptr(u32 ptr);
 
 int hl_asid_init(struct hl_device *hdev);
@@ -3612,7 +3669,7 @@ int hl_ctx_get_fences(struct hl_ctx *ctx, u64 *seq_arr,
 void hl_ctx_mgr_init(struct hl_ctx_mgr *mgr);
 void hl_ctx_mgr_fini(struct hl_device *hdev, struct hl_ctx_mgr *mgr);
 
-int hl_device_init(struct hl_device *hdev, struct class *hclass);
+int hl_device_init(struct hl_device *hdev);
 void hl_device_fini(struct hl_device *hdev);
 int hl_device_suspend(struct hl_device *hdev);
 int hl_device_resume(struct hl_device *hdev);
@@ -3662,6 +3719,7 @@ bool cs_needs_timeout(struct hl_cs *cs);
 bool is_staged_cs_last_exists(struct hl_device *hdev, struct hl_cs *cs);
 struct hl_cs *hl_staged_cs_find_first(struct hl_device *hdev, u64 cs_seq);
 void hl_multi_cs_completion_init(struct hl_device *hdev);
+u32 hl_get_active_cs_num(struct hl_device *hdev);
 
 void goya_set_asic_funcs(struct hl_device *hdev);
 void gaudi_set_asic_funcs(struct hl_device *hdev);
@@ -3879,6 +3937,8 @@ void hl_handle_razwi(struct hl_device *hdev, u64 addr, u16 *engine_id, u16 num_o
 void hl_capture_page_fault(struct hl_device *hdev, u64 addr, u16 eng_id, bool is_pmmu);
 void hl_handle_page_fault(struct hl_device *hdev, u64 addr, u16 eng_id, bool is_pmmu,
 				u64 *event_mask);
+void hl_handle_critical_hw_err(struct hl_device *hdev, u16 event_id, u64 *event_mask);
+void hl_handle_fw_err(struct hl_device *hdev, struct hl_info_fw_err_info *info);
 
 #ifdef CONFIG_DEBUG_FS
 

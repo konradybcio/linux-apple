@@ -221,12 +221,9 @@ int hl_device_open(struct inode *inode, struct file *filp)
 
 	hl_debugfs_add_file(hpriv);
 
+	memset(&hdev->captured_err_info, 0, sizeof(hdev->captured_err_info));
 	atomic_set(&hdev->captured_err_info.cs_timeout.write_enable, 1);
-	atomic_set(&hdev->captured_err_info.razwi_info.razwi_detected, 0);
-	atomic_set(&hdev->captured_err_info.page_fault_info.page_fault_detected, 0);
 	hdev->captured_err_info.undef_opcode.write_enable = true;
-	hdev->captured_err_info.razwi_info.razwi_info_available = false;
-	hdev->captured_err_info.page_fault_info.page_fault_info_available = false;
 
 	hdev->open_counter++;
 	hdev->last_successful_open_jif = jiffies;
@@ -324,6 +321,7 @@ static void copy_kernel_module_params_to_device(struct hl_device *hdev)
 	hdev->asic_prop.fw_security_enabled = is_asic_secured(hdev->asic_type);
 
 	hdev->major = hl_major;
+	hdev->hclass = hl_class;
 	hdev->memory_scrub = memory_scrub;
 	hdev->reset_on_lockup = reset_on_lockup;
 	hdev->boot_error_status_mask = boot_error_status_mask;
@@ -552,7 +550,7 @@ static int hl_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 
 	pci_enable_pcie_error_reporting(pdev);
 
-	rc = hl_device_init(hdev, hl_class);
+	rc = hl_device_init(hdev);
 	if (rc) {
 		dev_err(&pdev->dev, "Fatal error during habanalabs device init\n");
 		rc = -ENODEV;

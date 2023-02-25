@@ -472,6 +472,7 @@ int goya_set_fixed_properties(struct hl_device *hdev)
 	prop->max_pending_cs = GOYA_MAX_PENDING_CS;
 
 	prop->first_available_user_interrupt = USHRT_MAX;
+	prop->tpc_interrupt_id = USHRT_MAX;
 
 	for (i = 0 ; i < HL_MAX_DCORES ; i++)
 		prop->first_available_cq[i] = USHRT_MAX;
@@ -2782,7 +2783,7 @@ disable_queues:
 	return rc;
 }
 
-static void goya_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset)
+static int goya_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset)
 {
 	struct goya_device *goya = hdev->asic_specific;
 	u32 reset_timeout_ms, cpu_timeout_ms, status;
@@ -2838,7 +2839,7 @@ static void goya_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset)
 						HW_CAP_GOLDEN | HW_CAP_TPC);
 		WREG32(mmGIC_DISTRIBUTOR__5_GICD_SETSPI_NSR,
 				GOYA_ASYNC_EVENT_ID_SOFT_RESET);
-		return;
+		return 0;
 	}
 
 	/* Chicken bit to re-initiate boot sequencer flow */
@@ -2857,6 +2858,7 @@ static void goya_hw_fini(struct hl_device *hdev, bool hard_reset, bool fw_reset)
 
 		memset(goya->events_stat, 0, sizeof(goya->events_stat));
 	}
+	return 0;
 }
 
 int goya_suspend(struct hl_device *hdev)
